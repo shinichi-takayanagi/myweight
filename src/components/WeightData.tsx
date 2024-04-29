@@ -17,7 +17,7 @@ const fetchInnerScanData = async (
   date: string,
   tag: string
 ): Promise<WeightData[]> => {
-  const url = 'https://www.healthplanet.jp/status/innerscan.json';
+  const url = 'https://corsproxy.io/?https://www.healthplanet.jp/status/innerscan.json';
   const params = new URLSearchParams();
   params.append('access_token', accessToken);
   params.append('date', date);
@@ -31,7 +31,6 @@ const fetchInnerScanData = async (
         weight: Number(record["keydata"])
       }); 
     }
-    console.log(result)
     return result;
   } catch (error) {
     console.error('Error fetching inner scan data:', error);
