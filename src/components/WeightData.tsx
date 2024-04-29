@@ -17,7 +17,7 @@ const fetchInnerScanData = async (
   date: string,
   tag: string
 ): Promise<WeightData[]> => {
-  const url = '/status/innerscan.json';
+  const url = 'https://www.healthplanet.jp/status/innerscan.json';
   const params = new URLSearchParams();
   params.append('access_token', accessToken);
   params.append('date', date);
@@ -39,6 +39,7 @@ const fetchInnerScanData = async (
   }
 };
 
+// Why here?: => Because it is not significantly important information
 const accessToken = '1713215418763/lRdcV5GuHjwvuJ9LiTW4Se0oCaDNNpA6CdVRvDh2';
 const date = '1';
 const tag = '6021';
