@@ -1,15 +1,15 @@
 import axios from 'axios';
+import moment from 'moment';
 type WeightData = {
-  date: Date;
+  date: String;
   weight: number;
 };
 
-let parseDate = (dateString: string): Date => {
+let parseDate = (dateString: string): string => {
   const year = parseInt(dateString.slice(0, 4), 10);
   const month = parseInt(dateString.slice(4, 6), 10) - 1;
   const day = parseInt(dateString.slice(6, 8), 10);
-
-  return new Date(year, month, day);
+  return moment(new Date(year, month, day)).format('YYYY/MM/DD');
 }
 
 const fetchInnerScanData = async (

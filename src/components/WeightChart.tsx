@@ -7,34 +7,29 @@ import {
   XAxis,
   YAxis,
   Brush,
+  ResponsiveContainer,
 } from 'recharts';
-import moment from 'moment';
 import weightDataList from './WeightData';
 
-let formatXAxis = (tickItem: Date): string => {
-  return moment(tickItem).format('MM/DD')
-}
-
 const WeightChart = () => (
-  <div className="container">
+  <ResponsiveContainer width={900} height={500}>
     <LineChart
-      width={700}
-      height={500}
       data={weightDataList}
-      margin={{top: 5, right: 5, left: 5, bottom: 5}}>
+      margin={{top: 5, right: 5, left: 5, bottom: 150}}>
       <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="date" tickFormatter={formatXAxis} />
+      <XAxis dataKey="date" angle={-90} textAnchor="end"/>
       <YAxis dataKey="weight" domain={[70, 'auto']} />
       <Line type="monotone" dataKey="weight" stroke="#8884d8" strokeWidth={3}/>
       <Legend verticalAlign="top" height={36}/>
+      <Tooltip formatter = {value => value} />
       <Brush
         className="TimeLineChart-brush"
         dataKey="date"
         stroke="#8884d8"
+        y={400}
       />
-      <Tooltip />
     </LineChart>
-  </div>
+  </ResponsiveContainer>
 );
 
 export default WeightChart;
