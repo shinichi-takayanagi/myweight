@@ -4,7 +4,7 @@
 
 ## Project
 
-`myweight` は HealthPlanet の体重データを取得し、React + Recharts で体重推移を表示する Vite アプリケーションである。
+`myweight` は HealthPlanet の体重・体脂肪率データを取得し、React + Recharts で推移を表示する Vite アプリケーションである。
 
 詳細な現行仕様は [docs/spec.md](docs/spec.md) を参照する。
 
@@ -19,8 +19,8 @@
 特に以下を守る。
 
 - 既存の Vite + React + TypeScript 構成に合わせる。
-- 体重データ取得とチャート表示の責務分離を維持する。
-- `npm run build` と `npm run lint` の意味を変える場合は、関連ドキュメントも更新する。
+- 測定データ取得とチャート表示の責務分離を維持する。
+- `npm run export`、`npm run build`、`npm run lint` の意味を変える場合は、関連ドキュメントも更新する。
 - 新規の秘密情報をコードへ直接追加しない。
 
 ## Repository Structure
@@ -41,4 +41,4 @@
 ## Known Notes
 
 - 現時点では `src/components/WeightData.tsx` にアクセストークンがハードコードされている。変更時は [docs/rule.md](docs/rule.md) のセキュリティ方針を確認する。
-- README の Build 手順は `npm run export` と書かれているが、現時点の `package.json` に存在する build script は `npm run build` である。
+- GitHub Pages 向けには `npm run export` で production build する。公開後のデータ取得はブラウザから `corsproxy.io` 経由で行う。

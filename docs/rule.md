@@ -8,7 +8,7 @@
 - React コンポーネントは関数コンポーネントで実装する。
 - TypeScript の `strict` 設定を前提にする。
 - 既存の依存関係で解決できる処理は、まず既存ライブラリを使う。
-- 体重データの取得・整形の責務は `WeightData.tsx`、表示の責務は `WeightChart.tsx` を中心に保つ。
+- 測定データの取得・整形の責務は `WeightData.tsx`、表示の責務は `WeightChart.tsx` を中心に保つ。
 
 ## TypeScript
 
@@ -47,7 +47,15 @@ ESLint の主な設定は以下。
 
 ## Build
 
-現時点の build コマンドは以下。
+GitHub Pages 向けの export コマンドは以下。
+
+```bash
+npm run export
+```
+
+内部では `npm run build` を実行する。
+
+通常の build コマンドは以下。
 
 ```bash
 npm run build
@@ -65,10 +73,11 @@ npm run build
 
 - HealthPlanet API への通信は axios を使う。
 - 日付処理は moment を使う。
-- 体重タグは `6021` を使用する。
+- 体重タグは `6021`、体脂肪率タグは `6022` を使用する。
 - API 取得期間は 80 日以下のチャンクに分割する。
 - API の入力日時は `YYYYMMDDHHmmss` 形式で扱う。
 - 画面表示用の日付は `YYYY/MM/DD` 形式で扱う。
+- production build は `corsproxy.io` 経由で HealthPlanet API にアクセスする。
 
 ## セキュリティと設定値
 
