@@ -1,0 +1,127 @@
+# Repository
+
+このドキュメントは、現時点のレポジトリ構成をまとめる。
+
+## 概要
+
+`myweight` は Vite + React + TypeScript のシングルページアプリケーションである。
+
+## 主要ファイル
+
+```text
+.
+├── AGENTS.md
+├── README.md
+├── docs/
+│   ├── feature.md
+│   ├── repo.md
+│   ├── rule.md
+│   └── spec.md
+├── index.html
+├── package-lock.json
+├── package.json
+├── public/
+│   └── vite.svg
+├── src/
+│   ├── App.css
+│   ├── App.tsx
+│   ├── assets/
+│   ├── components/
+│   │   ├── WeightChart.tsx
+│   │   └── WeightData.tsx
+│   ├── index.css
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+```
+
+## ディレクトリ
+
+### `docs/`
+
+現時点の仕様、Coding Rule、機能、レポジトリ構成を管理する。
+
+### `src/`
+
+アプリケーション本体を配置する。
+
+### `src/components/`
+
+画面部品とデータ取得モジュールを配置する。
+
+- `WeightChart.tsx`: 体重推移グラフを表示する。
+- `WeightData.tsx`: HealthPlanet API から体重データを取得し、チャート用に整形する。
+
+### `public/`
+
+Vite の静的アセットを配置する。
+
+### `dist/`
+
+build 出力先。生成物であり、通常は手編集しない。
+
+### `node_modules/`
+
+npm 依存関係のインストール先。手編集しない。
+
+## 設定ファイル
+
+### `package.json`
+
+プロジェクト名、依存関係、npm scripts を定義する。
+
+主な scripts:
+
+- `dev`: Vite 開発サーバーを起動する。
+- `build`: `tsc && vite build` を実行する。
+- `lint`: ESLint を実行する。
+- `preview`: Vite preview を起動する。
+
+### `vite.config.ts`
+
+Vite 設定を定義する。
+
+- React SWC plugin を使用する。
+- `base` は `/myweight/`。
+- esbuild で top-level await を許可する。
+
+### `tsconfig.json`
+
+`src` 用の TypeScript 設定を定義する。
+
+### `tsconfig.node.json`
+
+`vite.config.ts` 用の TypeScript 設定を定義する。
+
+### `.eslintrc.cjs`
+
+ESLint 設定を定義する。
+
+## エントリポイント
+
+- HTML エントリポイント: `index.html`
+- React エントリポイント: `src/main.tsx`
+- アプリルート: `src/App.tsx`
+
+## 依存関係
+
+主な runtime dependencies:
+
+- `react`
+- `react-dom`
+- `axios`
+- `moment`
+- `recharts`
+- `cors`
+
+主な dev dependencies:
+
+- `vite`
+- `typescript`
+- `eslint`
+- `@vitejs/plugin-react-swc`
+- `@typescript-eslint/*`
+- `eslint-plugin-react-hooks`
+- `eslint-plugin-react-refresh`
