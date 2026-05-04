@@ -1,11 +1,11 @@
 import axios from 'axios';
 import moment from 'moment';
 type WeightData = {
-  date: String;
+  date: string;
   weight: number;
 };
 
-let parseDate = (dateString: string): string => {
+const parseDate = (dateString: string): string => {
   const year = parseInt(dateString.slice(0, 4), 10);
   const month = parseInt(dateString.slice(4, 6), 10) - 1;
   const day = parseInt(dateString.slice(6, 8), 10);
