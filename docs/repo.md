@@ -17,6 +17,9 @@
 │   ├── repo.md
 │   ├── rule.md
 │   └── spec.md
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 ├── index.html
 ├── package-lock.json
 ├── package.json
@@ -43,6 +46,12 @@
 
 現時点の仕様、Coding Rule、機能、レポジトリ構成を管理する。
 
+### `.github/workflows/`
+
+GitHub Actions の workflow を配置する。
+
+- `deploy.yml`: push、手動実行、定期実行で `npm run export` を実行し、GitHub Pages にデプロイする。
+
 ### `src/`
 
 アプリケーション本体を配置する。
@@ -51,8 +60,8 @@
 
 画面部品とデータ取得モジュールを配置する。
 
-- `WeightChart.tsx`: 体重推移グラフを表示する。
-- `WeightData.tsx`: HealthPlanet API から体重データを取得し、チャート用に整形する。
+- `WeightChart.tsx`: 測定項目の選択 UI と推移グラフを表示する。
+- `WeightData.tsx`: HealthPlanet API から体重・体脂肪率データを取得し、チャート用に整形する。
 
 ### `public/`
 
@@ -76,6 +85,7 @@ npm 依存関係のインストール先。手編集しない。
 
 - `dev`: Vite 開発サーバーを起動する。
 - `build`: `tsc && vite build` を実行する。
+- `export`: production build を実行する。
 - `lint`: ESLint を実行する。
 - `preview`: Vite preview を起動する。
 
@@ -84,7 +94,8 @@ npm 依存関係のインストール先。手編集しない。
 Vite 設定を定義する。
 
 - React SWC plugin を使用する。
-- `base` は `/myweight/`。
+- `base` は `./`。
+- 開発サーバーでは `/healthplanet` を HealthPlanet API に proxy する。
 - esbuild で top-level await を許可する。
 
 ### `tsconfig.json`

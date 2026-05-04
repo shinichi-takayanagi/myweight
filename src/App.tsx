@@ -2,10 +2,13 @@ import './App.css'
 import WeightChart from './components/WeightChart';
   
 const App = () => (
-  <div className="App">
-    <h1>おじさんの体重の推移</h1>
+  <main className="App">
+    <header className="app-header">
+      <p className="eyebrow">Daily Body Metrics</p>
+      <h1>おじさんのからだログ</h1>
+    </header>
     <WeightChart />
-  </div>
+  </main>
 );
 
 export default App;

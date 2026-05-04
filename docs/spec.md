@@ -4,9 +4,9 @@
 
 ## アプリ概要
 
-`myweight` は、HealthPlanet の Innerscan API から体重データを取得し、日付ごとの体重推移を折れ線グラフで表示する React アプリケーションである。
+`myweight` は、HealthPlanet の Innerscan API から体重・体脂肪率データを取得し、日付ごとの推移を折れ線グラフで表示する React アプリケーションである。
 
-画面タイトルは `おじさんの体重の推移`。
+画面タイトルは `おじさんのからだログ`。
 
 ## 実行環境
 
@@ -15,63 +15,80 @@
 - グラフ描画には Recharts を使用する。
 - HTTP 通信には axios を使用する。
 - 日付処理には moment を使用する。
-- Vite の `base` は `/myweight/`。
+- Vite の `base` は `./`。GitHub Pages の `/myweight/` 配下でも、HTML から相対パスで JS/CSS を読み込む。
 - Vite の esbuild 設定で top-level await を許可している。
 
 ## データ取得仕様
 
 - データ取得元は HealthPlanet の Innerscan API。
-- 実際のリクエスト先は CORS 回避のため `https://corsproxy.io/?https://www.healthplanet.jp/status/innerscan.json`。
+- 開発サーバーでは CORS 回避のため、Vite proxy の `/healthplanet/status/innerscan.json` 経由で HealthPlanet にリクエストする。
+- GitHub Pages などの静的ホスティングでは Vite proxy が使えないため、production build は `corsproxy.io/?https://www.healthplanet.jp/status/innerscan.json` 経由で HealthPlanet にリクエストする。
+- `corsproxy.io` を使うことで、GitHub Pages 公開後も画面ロード時に最新データを取得する。
+- `corsproxy.io` の設定で GitHub Pages の公開ドメインを Allowed Domains に登録する必要がある。
+- データは常に HealthPlanet API からライブ取得する。
+- API 取得に失敗した場合でも、`measurement-data.json` などの静的ファイルへフォールバックしてはならない。
+- `npm run export` / GitHub Pages deploy のタイミングで取得したデータを同梱して表示する仕様にはしない。
 - HTTP メソッドは POST。
+- production build でも HealthPlanet 向けパラメータは URL query ではなく `application/x-www-form-urlencoded` の POST body で送信する。
 - 送信パラメータは以下。
   - `access_token`
   - `date=1`
-  - `tag=6021`
+  - `tag`
   - `from`
   - `to`
 - `tag=6021` は体重データを表す。
+- `tag=6022` は体脂肪率データを表す。
+- 画面ロード時に体重と体脂肪率を一括取得する。
+- 開発時のみ、`?fixture=success` を付けると正常系表示確認用の fixture データを使用する。
 - API の 1 回あたりの取得期間は最大 80 日として分割する。
-- 取得開始日時は `20240327000000`。
+- 取得開始日時は `20260401090000`。
 - 取得終了日時は実行時点の現在日時。
 - 各チャンクは前回の `to` の 1 秒後から次の `from` を開始する。
 
 ## データ形式
 
-アプリ内の体重データは以下の形式で扱う。
+アプリ内の測定データは以下の形式で扱う。
 
 ```ts
-type WeightData = {
+type MeasurementData = {
   date: string;
-  weight: number;
+  value: number;
 };
 ```
 
 - API レスポンスの `record.date` は `YYYY/MM/DD` 形式に変換する。
-- API レスポンスの `record.keydata` は `Number` で数値化して `weight` とする。
+- API レスポンスの `record.keydata` は `Number` で数値化して `value` とする。
 - API から返された `data` は `reverse()` してからチャート用配列に詰める。
+- 測定データは `weight` と `bodyFat` のキーで保持する。
 
 ## 画面仕様
 
 - `App` コンポーネントはアプリ全体のコンテナと見出しを表示する。
-- `WeightChart` コンポーネントは体重推移グラフを表示する。
+- `WeightChart` コンポーネントは測定項目の選択 UI と推移グラフを表示する。
+- ComboBox で `体重` と `体脂肪率` を選択できる。
+- 選択された項目に応じて、グラフのデータ、凡例、単位、線色、Y 軸設定を切り替える。
+- 最新値、取得件数、最新日付をサマリー表示する。
 - グラフは `ResponsiveContainer`、`LineChart`、`Line`、`XAxis`、`YAxis`、`Tooltip`、`Legend`、`Brush` を使用する。
-- グラフサイズは `ResponsiveContainer width={900} height={500}`。
-- X 軸は `date` を使用し、ラベルは -90 度回転する。
-- Y 軸は `weight` を使用し、最小値は 70、最大値は自動。
-- 折れ線は `type="monotone"`、`stroke="#8884d8"`、`strokeWidth={3}`。
-- Brush は `date` をキーにし、`y={400}` に配置する。
+- グラフサイズは親要素に追従する。
+- X 軸は `date` を使用し、ラベルは -45 度回転する。
+- Y 軸は `value` を使用する。
+- 体重の Y 軸最小値は 70、最大値は自動。
+- 体脂肪率の Y 軸は最小値・最大値とも自動。
+- 折れ線は `type="monotone"`、`strokeWidth={3}`、点は通常非表示。
+- Brush は `date` をキーにする。
 
 ## エラー処理
 
 - API 取得に失敗した場合は console にエラーを出力する。
-- axios エラーでレスポンスがあり、HTTP ステータスが 401 の場合は `Unauthorized: Invalid access token.` を投げる。
+- axios エラーでレスポンスがあり、HTTP ステータスが 401 または本文に `Error 401` が含まれる場合は HealthPlanet 認証エラーとして扱う。
 - axios エラーでレスポンスがない場合は `Network Error: Could not connect to the server.` を投げる。
-- その他のエラーは再 throw する。
+- 取得に失敗した測定項目は空データとして扱い、画面には空状態を表示する。
+- 静的データや古いキャッシュデータで成功表示に見せるフォールバックは行わない。
 
 ## 現時点の制約と注意点
 
 - アクセストークンは `src/components/WeightData.tsx` にハードコードされている。
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
-- データ取得はブラウザから CORS プロキシ経由で行う。
+- 開発時の実 API 取得は Vite proxy 経由で行う。
+- production build の実 API 取得は `corsproxy.io` 経由で行う。
 - `src/main.tsx` の先頭に `<script src="http://localhost:8097"></script>` が含まれている。TypeScript/TSX としては通常の import 文ではないため、ビルドや型チェック時の注意点である。
-- README の Build 手順は `npm run export` と書かれているが、現時点の `package.json` に `export` スクリプトはない。実装上の build スクリプトは `npm run build`。
