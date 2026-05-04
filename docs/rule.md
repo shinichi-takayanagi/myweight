@@ -77,7 +77,7 @@ npm run build
 - API 取得期間は 80 日以下のチャンクに分割する。
 - API の入力日時は `YYYYMMDDHHmmss` 形式で扱う。
 - 画面表示用の日付は `YYYY/MM/DD` 形式で扱う。
-- production build は `corsproxy.io` 経由で HealthPlanet API にアクセスする。
+- 開発時・production build ともに `corsproxy.io` 経由で HealthPlanet API にアクセスする。
 
 ## セキュリティと設定値
 

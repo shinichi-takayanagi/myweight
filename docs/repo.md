@@ -95,7 +95,6 @@ Vite 設定を定義する。
 
 - React SWC plugin を使用する。
 - `base` は `./`。
-- 開発サーバーでは `/healthplanet` を HealthPlanet API に proxy する。
 - esbuild で top-level await を許可する。
 
 ### `tsconfig.json`

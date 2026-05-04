@@ -21,8 +21,8 @@
 ## データ取得仕様
 
 - データ取得元は HealthPlanet の Innerscan API。
-- 開発サーバーでは CORS 回避のため、Vite proxy の `/healthplanet/status/innerscan.json` 経由で HealthPlanet にリクエストする。
-- GitHub Pages などの静的ホスティングでは Vite proxy が使えないため、production build は `corsproxy.io/?https://www.healthplanet.jp/status/innerscan.json` 経由で HealthPlanet にリクエストする。
+- 開発時・production build ともに、CORS 回避のため `corsproxy.io` 経由で HealthPlanet にリクエストする。
+- リクエスト先は `https://corsproxy.io/?url=https://www.healthplanet.jp/status/innerscan.json` とする。
 - `corsproxy.io` を使うことで、GitHub Pages 公開後も画面ロード時に最新データを取得する。
 - `corsproxy.io` の設定で GitHub Pages の公開ドメインを Allowed Domains に登録する必要がある。
 - データは常に HealthPlanet API からライブ取得する。
@@ -89,6 +89,5 @@ type MeasurementData = {
 
 - アクセストークンは `src/components/WeightData.tsx` にハードコードされている。
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
-- 開発時の実 API 取得は Vite proxy 経由で行う。
-- production build の実 API 取得は `corsproxy.io` 経由で行う。
+- 実 API 取得は開発時・production build ともに `corsproxy.io` 経由で行う。
 - `src/main.tsx` の先頭に `<script src="http://localhost:8097"></script>` が含まれている。TypeScript/TSX としては通常の import 文ではないため、ビルドや型チェック時の注意点である。

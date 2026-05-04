@@ -86,20 +86,16 @@ const fetchInnerScanDataSet = async (
   const params = new URLSearchParams();
   params.append('access_token', accessToken);
   params.append('date', '1');
-  params.append('tag', import.meta.env.DEV
-    ? measurementMetrics.map(metric => metric.tag).join(',')
-    : '6021');
+  params.append('tag', measurementMetrics.map(metric => metric.tag).join(','));
   params.append('from', from);
   params.append('to', to);
-  const url = import.meta.env.DEV
-    ? '/healthplanet/status/innerscan.json'
-    : `https://corsproxy.io/?${healthPlanetUrl}`;
+  const url = `https://corsproxy.io/?url=${healthPlanetUrl}`;
 
   try {
       console.error(
         '[HealthPlanet request debug]',
         JSON.stringify({
-          transport: import.meta.env.DEV ? 'vite-proxy' : 'corsproxy.io',
+          transport: 'corsproxy.io',
           method: 'POST',
           healthPlanetUrl,
           proxyUrl: url,
