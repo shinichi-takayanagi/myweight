@@ -100,6 +100,54 @@ const getHeaderValue = (
   return headers[name];
 };
 
+const normalizeHeaders = (
+  headers: { get?: (name: string) => unknown; [key: string]: unknown } | undefined
+): Record<string, unknown> => {
+  if (!headers) {
+    return {};
+  }
+
+  const normalized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof value !== 'function') {
+      normalized[key] = value;
+    }
+  }
+
+  for (const headerName of [
+    'content-type',
+    'content-encoding',
+    'cf-ray',
+    'server',
+    'access-control-allow-origin',
+    'access-control-allow-methods',
+    'access-control-allow-headers',
+  ]) {
+    const value = getHeaderValue(headers, headerName);
+    if (value !== undefined && value !== null) {
+      normalized[headerName] = value;
+    }
+  }
+
+  return normalized;
+};
+
+const logHealthPlanetHeaders = (
+  label: string,
+  status: number | undefined,
+  headers: { get?: (name: string) => unknown; [key: string]: unknown } | undefined
+): void => {
+  const contentType = headers ? getHeaderValue(headers, 'content-type') : undefined;
+  const contentEncoding = headers ? getHeaderValue(headers, 'content-encoding') : undefined;
+
+  console.error(label, {
+    status,
+    contentType,
+    contentEncoding,
+    headers: normalizeHeaders(headers),
+  });
+};
+
 const fetchInnerScanDataSet = async (
   accessToken: string,
   from: string,
@@ -132,14 +180,7 @@ const fetchInnerScanDataSet = async (
         })
       );
       const response = await axios.post(url, params);
-      const contentType = getHeaderValue(response.headers, 'content-type');
-      const contentEncoding = getHeaderValue(response.headers, 'content-encoding');
-
-      console.error('[HealthPlanet headers]', {
-        status: response.status,
-        contentType,
-        contentEncoding,
-      });
+      logHealthPlanetHeaders('[HealthPlanet headers]', response.status, response.headers);
       const responseData = parseResponseData(response.data);
       if (
         responseData &&
@@ -191,7 +232,25 @@ const fetchInnerScanDataSet = async (
   } catch (error) {
       console.error('Error fetching measurement data:', error);
       if (axios.isAxiosError(error)) {
+          console.error(
+            '[HealthPlanet axios error debug]',
+            JSON.stringify({
+              message: error.message,
+              code: error.code,
+              requestUrl: error.config?.url,
+              method: error.config?.method,
+              status: error.response?.status,
+              statusText: error.response?.statusText,
+              hasResponse: Boolean(error.response),
+              hasRequest: Boolean(error.request),
+            })
+          );
           if (error.response) {
+              logHealthPlanetHeaders(
+                '[HealthPlanet error headers]',
+                error.response.status,
+                error.response.headers
+              );
               console.error(`Status: ${error.response.status}, Data:`, error.response.data);
               console.error(
                 '[HealthPlanet raw response]',
