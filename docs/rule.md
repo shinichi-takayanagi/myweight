@@ -90,7 +90,7 @@ npm run build
 - build 後の `dist/` は `npm run preview:pages` で `/myweight/` 配下として localhost で配信して確認する。
 - 確認 URL は `http://localhost:4173/myweight/` のように `localhost` hostname を使う。
 - `file://` で `dist/index.html` を直接開く方法は、corsproxy.io Free plan の localhost/github.io 判定と異なるため、正常系確認には使わない。
-- localhost の実 API 確認では取得開始日時を `20260401090000` とし、リクエスト数を抑える。
+- localhost の実 API 確認では取得開始日時を実行時点の現在日時から 45 日前とし、リクエスト数を抑える。
 - GitHub Pages では取得開始日時を `20240327000000` とする。
 
 ## セキュリティと設定値

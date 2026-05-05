@@ -2,7 +2,7 @@ import { access, mkdir, writeFile } from 'node:fs/promises';
 
 const ACCESS_TOKEN = '1777887687936/aCcnps5M5hFTpJhxSIWYMv8bhelUpvjw04JnJKGw';
 const MAX_DAYS_PER_REQUEST = 80;
-const START_DATE = '20260401090000';
+const HEALTH_PLANET_LOOKBACK_DAYS = 45;
 
 const measurementMetrics = [
   { key: 'weight', tag: '6021' },
@@ -28,16 +28,6 @@ const formatToApiDate = date => {
     pad(date.getMinutes()),
     pad(date.getSeconds()),
   ].join('');
-};
-
-const parseApiDateTime = value => {
-  const year = Number(value.slice(0, 4));
-  const month = Number(value.slice(4, 6)) - 1;
-  const day = Number(value.slice(6, 8));
-  const hour = Number(value.slice(8, 10));
-  const minute = Number(value.slice(10, 12));
-  const second = Number(value.slice(12, 14));
-  return new Date(year, month, day, hour, minute, second);
 };
 
 const addDays = (date, days) => {
@@ -110,7 +100,7 @@ const fetchInnerScanDataSet = async (from, to) => {
 
 const fetchMeasurementDataSet = async () => {
   const endDate = new Date();
-  let currentFrom = parseApiDateTime(START_DATE);
+  let currentFrom = addDays(endDate, -HEALTH_PLANET_LOOKBACK_DAYS);
   const allData = createEmptyMeasurementDataSet();
 
   while (currentFrom < endDate) {

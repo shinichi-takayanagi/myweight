@@ -80,7 +80,7 @@ Vite の静的アセットを配置する。
 
 開発・検証用の補助スクリプトを配置する。
 
-- `export-healthplanet-data.mjs`: HealthPlanet API から測定データを取得し、`public/measurement-data.json` を生成する補助スクリプト。現行の `npm run export` からは呼び出されない。
+- `export-healthplanet-data.mjs`: 実行時点の 45 日前から HealthPlanet API の測定データを取得し、`public/measurement-data.json` を生成する補助スクリプト。現行の `npm run export` からは呼び出されない。
 - `serve-pages.mjs`: `dist/` を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
 
 ### `dist/`

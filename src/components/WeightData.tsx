@@ -55,7 +55,7 @@ const formatToApiDate = (date: moment.Moment): string => {
 };
 
 const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
-const LOCAL_HEALTH_PLANET_START_DATE = '20260401090000';
+const LOCAL_HEALTH_PLANET_LOOKBACK_DAYS = 45;
 const GITHUB_PAGES_HEALTH_PLANET_START_DATE = '20240327000000';
 const FORM_URLENCODED_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8';
 
@@ -323,7 +323,7 @@ const isLocalhostRuntime = (): boolean => {
 
 const getHealthPlanetStartDateString = (): string => {
   return isLocalhostRuntime()
-    ? LOCAL_HEALTH_PLANET_START_DATE
+    ? formatToApiDate(moment().subtract(LOCAL_HEALTH_PLANET_LOOKBACK_DAYS, 'days'))
     : GITHUB_PAGES_HEALTH_PLANET_START_DATE;
 };
 
