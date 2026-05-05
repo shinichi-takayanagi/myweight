@@ -47,8 +47,16 @@
 - `npm run build` で TypeScript チェックと Vite build を実行する。
 - `npm run export` で GitHub Pages 用の production build を実行する。
 - `npm run lint` で ESLint を実行する。
+- `npm test` で Vitest による自動テストを実行する。
 - `npm run preview` で build 結果をプレビューする。
 - `npm run preview:pages` で build 結果を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
+
+## 自動テスト
+
+- Vitest で自動テストを実行する。
+- HealthPlanet のレスポンスレコードをチャート用データへ変換する純粋関数をテストする。
+- 測定種別タグ、空データセット、日付整形、未知タグの無視、API レスポンス順からチャート表示順への反転を確認する。
+- GitHub Actions の CI で pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## 未実装・現時点で存在しない機能
 - 古いデータをREPOにためておき、APIを呼ばずにそれを参照する機能はない。

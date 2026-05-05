@@ -10,11 +10,8 @@ import {
   Brush,
   ResponsiveContainer,
 } from 'recharts';
-import measurementDataSet, {
-  MeasurementKey,
-  measurementFetchError,
-  measurementMetrics,
-} from './WeightData';
+import measurementDataSet, { measurementFetchError } from './WeightData';
+import { MeasurementKey, measurementMetrics } from '../lib/measurementData';
 
 const WeightChart = () => {
   const [selectedMetricKey, setSelectedMetricKey] = useState<MeasurementKey>('weight');

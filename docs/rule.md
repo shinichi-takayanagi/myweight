@@ -9,6 +9,7 @@
 - TypeScript の `strict` 設定を前提にする。
 - 既存の依存関係で解決できる処理は、まず既存ライブラリを使う。
 - 測定データの取得・整形の責務は `WeightData.tsx`、表示の責務は `WeightChart.tsx` を中心に保つ。
+- API に依存しない測定データの型・定義・整形処理は `src/lib/measurementData.ts` に分離し、テスト可能な形を保つ。
 
 ## TypeScript
 
@@ -44,6 +45,19 @@ ESLint の主な設定は以下。
 - `react-refresh/only-export-components`
 
 `dist` と `.eslintrc.cjs` は lint 対象外。
+
+## Test
+
+現時点の test コマンドは以下。
+
+```bash
+npm test
+```
+
+- テストランナーは Vitest を使用する。
+- 外部 API 通信に依存しない純粋関数を優先してテストする。
+- HealthPlanet API レスポンスの整形ロジックは `src/lib/measurementData.ts` に置き、`src/lib/measurementData.test.ts` で検証する。
+- GitHub Actions の CI では pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## Build
 

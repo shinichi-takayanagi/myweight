@@ -40,6 +40,11 @@ https://shinichi-takayanagi.github.io/myweight/
 npm run build
 ```
 
+### Test
+```bash
+npm test
+```
+
 ### Local Run
 ```bash
 npm run dev   
