@@ -22,7 +22,7 @@
 
 - データ取得元は HealthPlanet の Innerscan API。
 - 開発時・production build ともに、CORS 回避のため `corsproxy.io` 経由で HealthPlanet にリクエストする。
-- リクエスト先は `https://corsproxy.io/?url=https://www.healthplanet.jp/status/innerscan.json` とする。
+- リクエスト先は `https://corsproxy.io/?url=...` を基本とし、`reqHeaders` で HealthPlanet origin fetch 側の request header を明示する。
 - `corsproxy.io` を使うことで、GitHub Pages 公開後も画面ロード時に最新データを取得する。
 - `corsproxy.io` の設定で GitHub Pages の公開ドメインを Allowed Domains に登録する必要がある。
 - データは常に HealthPlanet API からライブ取得する。
@@ -30,6 +30,13 @@
 - `npm run export` / GitHub Pages deploy のタイミングで取得したデータを同梱して表示する仕様にはしない。
 - HTTP メソッドは POST。
 - production build でも HealthPlanet 向けパラメータは URL query ではなく `application/x-www-form-urlencoded` の POST body で送信する。
+- ブラウザから `corsproxy.io` へ送る request header は以下。
+  - `Accept: application/json`
+  - `Content-Type: application/x-www-form-urlencoded;charset=UTF-8`
+- `corsproxy.io` から HealthPlanet へ送る request header は `reqHeaders` query parameter で以下を指定する。
+  - `accept:application/json`
+  - `accept-encoding:identity`
+- ブラウザ JavaScript から `Accept-Encoding` header は直接指定できないため、origin fetch 側の圧縮制御は `corsproxy.io` の `reqHeaders` で指定する。
 - 送信パラメータは以下。
   - `access_token`
   - `date=1`
@@ -41,9 +48,24 @@
 - 画面ロード時に体重と体脂肪率を一括取得する。
 - 開発時のみ、`?fixture=success` を付けると正常系表示確認用の fixture データを使用する。
 - API の 1 回あたりの取得期間は最大 80 日として分割する。
-- 取得開始日時は `20260401090000`。
+- 取得開始日時は実行環境により切り替える。
+  - `localhost`、`127.0.0.1`、`::1`: `20260401090000`
+  - GitHub Pages など localhost 以外: `20240327000000`
 - 取得終了日時は実行時点の現在日時。
 - 各チャンクは前回の `to` の 1 秒後から次の `from` を開始する。
+
+## レスポンスデコード仕様
+
+- HealthPlanet のレスポンス本文は JSON として扱う。
+- `corsproxy.io` 経由では `Content-Encoding` が欠落した Brotli 圧縮済み body が返ることがある。
+- axios は `responseType: 'arraybuffer'` で受け取り、以下の順に JSON parse を試みる。
+  - identity
+  - gzip
+  - deflate
+  - deflate-raw
+  - Brotli via `brotli-dec-wasm`
+- Brotli 展開に成功した場合、ログ上の `decodedFormat` は `br-wasm` となる。
+- Brotli decoder は `corsproxy.io` 側の header 挙動が変動した場合の保険として維持する。
 
 ## データ形式
 
@@ -80,6 +102,7 @@ type MeasurementData = {
 ## エラー処理
 
 - API 取得に失敗した場合は console にエラーを出力する。
+- request URL、request header、corsproxy.io の `reqHeaders`、response header、decode 試行結果を console に出力する。
 - axios エラーでレスポンスがあり、HTTP ステータスが 401 または本文に `Error 401` が含まれる場合は HealthPlanet 認証エラーとして扱う。
 - axios エラーでレスポンスがない場合は `Network Error: Could not connect to the server.` を投げる。
 - 取得に失敗した測定項目は空データとして扱い、画面には空状態を表示する。
@@ -90,4 +113,6 @@ type MeasurementData = {
 - アクセストークンは `src/components/WeightData.tsx` にハードコードされている。
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
 - 実 API 取得は開発時・production build ともに `corsproxy.io` 経由で行う。
+- GitHub Pages と同じ静的 HTML 条件を localhost で確認する場合は、`npm run export` 後に `npm run preview:pages` で `dist/` を `/myweight/` 配下として配信し、`http://localhost:4173/myweight/` のような URL で開く。
+- `file://` で `dist/index.html` を直接開く方法は、corsproxy.io の localhost/github.io 判定と異なるため、GitHub Pages 相当の正常系確認には使わない。
 - `src/main.tsx` の先頭に `<script src="http://localhost:8097"></script>` が含まれている。TypeScript/TSX としては通常の import 文ではないため、ビルドや型チェック時の注意点である。

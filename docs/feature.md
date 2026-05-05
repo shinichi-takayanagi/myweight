@@ -21,9 +21,12 @@
 - 体脂肪率データのタグとして `6022` を指定する。
 - 画面ロード時に両データを一括取得する。
 - GitHub Pages 公開後も、画面ロード時に `corsproxy.io` 経由で最新データを取得する。
-- 2026 年 4 月 1 日 09:00:00 から現在日時までのデータを取得する。
+- localhost では 2026 年 4 月 1 日 09:00:00 から現在日時までのデータを取得する。
+- GitHub Pages では 2024 年 3 月 27 日 00:00:00 から現在日時までのデータを取得する。
 - API 仕様上の制約に合わせ、80 日ごとにリクエストを分割する。
 - 各レスポンスの `date` と `keydata` をチャート用データに変換する。
+- `corsproxy.io` への request header と `reqHeaders` を明示し、HealthPlanet から JSON を取得する意図を固定する。
+- `corsproxy.io` 経由で Brotli 圧縮 body が返った場合は `brotli-dec-wasm` で展開する。
 
 ## 日付整形
 
@@ -33,6 +36,7 @@
 ## エラー出力
 
 - API 取得エラーを console に出力する。
+- API request、response header、raw response preview、decode 試行結果を console に出力する。
 - 401 エラーはアクセストークン不正として扱う。
 - レスポンスがない axios エラーはネットワークエラーとして扱う。
 
@@ -43,6 +47,7 @@
 - `npm run export` で GitHub Pages 用の production build を実行する。
 - `npm run lint` で ESLint を実行する。
 - `npm run preview` で build 結果をプレビューする。
+- `npm run preview:pages` で build 結果を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
 
 ## 未実装・現時点で存在しない機能
 

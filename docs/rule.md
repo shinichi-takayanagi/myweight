@@ -78,6 +78,19 @@ npm run build
 - API の入力日時は `YYYYMMDDHHmmss` 形式で扱う。
 - 画面表示用の日付は `YYYY/MM/DD` 形式で扱う。
 - 開発時・production build ともに `corsproxy.io` 経由で HealthPlanet API にアクセスする。
+- `corsproxy.io` 経由の HealthPlanet API 取得では、ブラウザ request header と `corsproxy.io` の `reqHeaders` を明示する。
+- ブラウザから直接指定できない `Accept-Encoding` は、`corsproxy.io` の `reqHeaders=accept-encoding:identity` で origin fetch 側に指定する。
+- `corsproxy.io` 経由のレスポンスは `arraybuffer` として受け取り、JSON parse と必要な展開処理を明示的に行う。
+- Brotli 展開の互換性は `brotli-dec-wasm` で担保する。
+
+## Local Verification
+
+- GitHub Pages と同じ条件を確認する場合は、`npm run export` で production build を作成する。
+- build 後の `dist/` は `npm run preview:pages` で `/myweight/` 配下として localhost で配信して確認する。
+- 確認 URL は `http://localhost:4173/myweight/` のように `localhost` hostname を使う。
+- `file://` で `dist/index.html` を直接開く方法は、corsproxy.io Free plan の localhost/github.io 判定と異なるため、正常系確認には使わない。
+- localhost の実 API 確認では取得開始日時を `20260401090000` とし、リクエスト数を抑える。
+- GitHub Pages では取得開始日時を `20240327000000` とする。
 
 ## セキュリティと設定値
 

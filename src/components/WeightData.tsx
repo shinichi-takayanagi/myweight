@@ -55,6 +55,8 @@ const formatToApiDate = (date: moment.Moment): string => {
 };
 
 const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
+const LOCAL_HEALTH_PLANET_START_DATE = '20260401090000';
+const GITHUB_PAGES_HEALTH_PLANET_START_DATE = '20240327000000';
 
 const metricByTag = new Map(measurementMetrics.map(metric => [metric.tag, metric]));
 
@@ -290,6 +292,28 @@ const logHealthPlanetHeaders = (
   });
 };
 
+const buildCorsProxyUrl = (targetUrl: string): string => {
+  const url = new URL('https://corsproxy.io/');
+  url.searchParams.set('url', targetUrl);
+  url.searchParams.append('reqHeaders', 'accept:application/json');
+  url.searchParams.append('reqHeaders', 'accept-encoding:identity');
+  return url.toString();
+};
+
+const isLocalhostRuntime = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+};
+
+const getHealthPlanetStartDateString = (): string => {
+  return isLocalhostRuntime()
+    ? LOCAL_HEALTH_PLANET_START_DATE
+    : GITHUB_PAGES_HEALTH_PLANET_START_DATE;
+};
+
 const fetchInnerScanDataSet = async (
   accessToken: string,
   from: string,
@@ -302,7 +326,7 @@ const fetchInnerScanDataSet = async (
   params.append('tag', measurementMetrics.map(metric => metric.tag).join(','));
   params.append('from', from);
   params.append('to', to);
-  const url = `https://corsproxy.io/?url=${healthPlanetUrl}`;
+  const url = buildCorsProxyUrl(healthPlanetUrl);
   const requestHeaders = {
     Accept: 'application/json',
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
@@ -317,6 +341,10 @@ const fetchInnerScanDataSet = async (
           healthPlanetUrl,
           proxyUrl: url,
           headers: requestHeaders,
+          corsProxyRequestHeaderOverrides: {
+            accept: 'application/json',
+            'accept-encoding': 'identity',
+          },
           forbiddenBrowserHeaders: ['Accept-Encoding'],
           params: {
             access_token: maskAccessToken(accessToken),
@@ -428,13 +456,18 @@ const fetchInnerScanDataSet = async (
 };
 
 const fetchMeasurementDataSet = async (accessToken: string): Promise<MeasurementDataSet> => {
-  const startDate = moment('20260401090000', 'YYYYMMDDHHmmss');
+  const startDateString = getHealthPlanetStartDateString();
+  const startDate = moment(startDateString, 'YYYYMMDDHHmmss');
   const endDate = moment(); // Current date and time
   const allData = createEmptyMeasurementDataSet();
 
   let currentFrom = startDate.clone(); // Use clone() to avoid modifying the original startDate
 
   try {
+    console.log(
+      `HealthPlanet fetch starts at ${startDateString} (${isLocalhostRuntime() ? 'localhost' : 'production'})`
+    );
+
     while (currentFrom.isBefore(endDate)) {
       // Calculate the 'to' date for this chunk (max 80 days)
       let currentTo = currentFrom.clone().add(MAX_DAYS_PER_REQUEST, 'days');
