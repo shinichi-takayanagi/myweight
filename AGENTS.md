@@ -42,3 +42,4 @@
 
 - 現時点では `src/components/WeightData.tsx` にアクセストークンがハードコードされている。変更時は [docs/rule.md](docs/rule.md) のセキュリティ方針を確認する。
 - GitHub Pages 向けには `npm run export` で production build する。公開後のデータ取得はブラウザから `corsproxy.io` 経由で行う。
+- localhost で GitHub Pages 相当の確認をする場合は [README.md](README.md) と [docs/rule.md](docs/rule.md) の Local Verification を参照する。

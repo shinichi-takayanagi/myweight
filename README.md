@@ -3,12 +3,37 @@
 
 ## Dev
 
+### Local GitHub Pages-like Check
+
+GitHub Pages と同じ静的 HTML として確認する場合は、production build を作って `dist/` を `/myweight/` 配下で配信する。
+
+```bash
+npm run export
+npm run preview:pages
+```
+
+ブラウザで以下を開く。
+
+```text
+http://localhost:4173/myweight/
+```
+
+localhost では HealthPlanet API の取得開始日時を `20260401090000` にして、API リクエスト数を抑える。GitHub Pages では `20240327000000` から取得する。
+
+`file://` で `dist/index.html` を直接開く確認は、corsproxy.io Free plan の localhost/github.io 判定と異なるため、GitHub Pages 相当の確認には使わない。
+
 ### Export for GitHub Pages
 ```bash
 npm run export
 ```
 
 `npm run export` runs the Vite production build for GitHub Pages. The deployed app fetches the latest HealthPlanet data in the browser through `corsproxy.io`.
+
+GitHub Pages の公開 URL:
+
+```text
+https://shinichi-takayanagi.github.io/myweight/
+```
 
 ### Build Only
 ```bash
@@ -19,3 +44,5 @@ npm run build
 ```bash
 npm run dev   
 ```
+
+`npm run dev` は Vite の開発サーバー確認用。GitHub Pages と同じ条件の確認には、上記の Local GitHub Pages-like Check を使う。

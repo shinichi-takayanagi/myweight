@@ -25,6 +25,8 @@
 ├── package.json
 ├── public/
 │   └── vite.svg
+├── scripts/
+│   └── serve-pages.mjs
 ├── src/
 │   ├── App.css
 │   ├── App.tsx
@@ -67,6 +69,12 @@ GitHub Actions の workflow を配置する。
 
 Vite の静的アセットを配置する。
 
+### `scripts/`
+
+開発・検証用の補助スクリプトを配置する。
+
+- `serve-pages.mjs`: `dist/` を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
+
 ### `dist/`
 
 build 出力先。生成物であり、通常は手編集しない。
@@ -88,6 +96,7 @@ npm 依存関係のインストール先。手編集しない。
 - `export`: production build を実行する。
 - `lint`: ESLint を実行する。
 - `preview`: Vite preview を起動する。
+- `preview:pages`: `scripts/serve-pages.mjs` で GitHub Pages 相当の localhost 確認サーバーを起動する。
 
 ### `vite.config.ts`
 
@@ -122,9 +131,12 @@ ESLint 設定を定義する。
 - `react`
 - `react-dom`
 - `axios`
+- `brotli-dec-wasm`
 - `moment`
 - `recharts`
 - `cors`
+
+`brotli-dec-wasm` は、`corsproxy.io` 経由で `Content-Encoding` が欠落した Brotli 圧縮 body が返った場合に、ブラウザ上で HealthPlanet レスポンスを展開するために使用する。
 
 主な dev dependencies:
 
