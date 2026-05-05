@@ -15,6 +15,7 @@
 ├── README.md
 ├── .github/
 │   └── workflows/
+│       ├── ci.yml
 │       └── deploy.yml
 ├── .gitignore
 ├── docs/
@@ -38,6 +39,9 @@
 │   ├── components/
 │   │   ├── WeightChart.tsx
 │   │   └── WeightData.tsx
+│   ├── lib/
+│   │   ├── measurementData.test.ts
+│   │   └── measurementData.ts
 │   ├── index.css
 │   ├── main.tsx
 │   └── vite-env.d.ts
@@ -56,7 +60,8 @@
 
 GitHub Actions の workflow を配置する。
 
-- `deploy.yml`: push、手動実行、定期実行で `npm run export` を実行し、GitHub Pages にデプロイする。
+- `ci.yml`: pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
+- `deploy.yml`: `master` branch への push、手動実行で `npm run export` を実行し、GitHub Pages にデプロイする。
 
 ### `src/`
 
@@ -68,6 +73,13 @@ GitHub Actions の workflow を配置する。
 
 - `WeightChart.tsx`: 測定項目の選択 UI と推移グラフを表示する。
 - `WeightData.tsx`: 静的測定データと HealthPlanet API の差分データを取得・マージし、チャート用に整形する。
+
+### `src/lib/`
+
+API 通信に依存しない型、定義、純粋なデータ整形処理を配置する。
+
+- `measurementData.ts`: 測定データ型、測定種別定義、HealthPlanet レスポンスレコードのチャート用変換処理を定義する。
+- `measurementData.test.ts`: `measurementData.ts` の Vitest テスト。
 
 ### `public/`
 
@@ -104,6 +116,7 @@ npm 依存関係のインストール先。手編集しない。
 - `export:data`: `scripts/export-healthplanet-data.mjs` を実行し、`public/measurement-data.json` を更新する。
 - `export`: production build を実行する。
 - `lint`: ESLint を実行する。
+- `test`: Vitest の自動テストを実行する。
 - `preview`: Vite preview を起動する。
 - `preview:pages`: `scripts/serve-pages.mjs` で GitHub Pages 相当の localhost 確認サーバーを起動する。
 
@@ -152,6 +165,7 @@ ESLint 設定を定義する。
 - `vite`
 - `typescript`
 - `eslint`
+- `vitest`
 - `@vitejs/plugin-react-swc`
 - `@typescript-eslint/*`
 - `eslint-plugin-react-hooks`

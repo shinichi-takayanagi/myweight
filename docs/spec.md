@@ -88,6 +88,7 @@ type MeasurementData = {
 - API レスポンスの `record.keydata` は `Number` で数値化して `value` とする。
 - API から返された `data` は `reverse()` してからチャート用配列に詰める。
 - 測定データは `weight` と `bodyFat` のキーで保持する。
+- API に依存しない測定データの型、測定種別定義、レスポンスレコード変換処理は `src/lib/measurementData.ts` に置く。
 - `public/measurement-data.json` は以下の形式で保持する。
 
 ```json
@@ -103,6 +104,14 @@ type MeasurementData = {
   }
 }
 ```
+
+## 自動テスト仕様
+
+- 自動テストは Vitest で実行する。
+- `npm test` は `vitest run` を実行する。
+- テストは外部 API 通信に依存しない純粋関数を対象にする。
+- 現時点では `src/lib/measurementData.test.ts` で測定種別定義、空データセット作成、日付整形、HealthPlanet レスポンスレコードのチャート用変換を検証する。
+- GitHub Actions の CI は pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## 画面仕様
 
@@ -134,6 +143,7 @@ type MeasurementData = {
 
 - アクセストークンは `src/components/WeightData.tsx` と補助スクリプト `scripts/export-healthplanet-data.mjs` にハードコードされている。
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
+- `WeightData.tsx` の import は HealthPlanet API 取得を起動するため、テストでは API 通信に依存しない `src/lib/measurementData.ts` を直接対象にする。
 - 実 API 取得は開発時・production build ともに `corsproxy.io` 経由で行う。
 - `scripts/export-healthplanet-data.mjs` は既存の `public/measurement-data.json` を読み込み、新規取得分を日付単位でマージして保存する。
 - GitHub Pages と同じ静的 HTML 条件を localhost で確認する場合は、`npm run export` 後に `npm run preview:pages` で `dist/` を `/myweight/` 配下として配信し、`http://localhost:4173/myweight/` のような URL で開く。

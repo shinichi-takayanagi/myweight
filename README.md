@@ -1,4 +1,7 @@
 # myweight
+
+[![CI](https://github.com/shinichi-takayanagi/myweight/actions/workflows/ci.yml/badge.svg)](https://github.com/shinichi-takayanagi/myweight/actions/workflows/ci.yml)
+
 私の体重の推移
 
 ## Dev
@@ -47,6 +50,11 @@ https://shinichi-takayanagi.github.io/myweight/
 ### Build Only
 ```bash
 npm run build
+```
+
+### Test
+```bash
+npm test
 ```
 
 ### Local Run
