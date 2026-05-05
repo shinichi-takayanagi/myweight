@@ -38,6 +38,9 @@
 │   ├── components/
 │   │   ├── WeightChart.tsx
 │   │   └── WeightData.tsx
+│   ├── lib/
+│   │   ├── measurementData.test.ts
+│   │   └── measurementData.ts
 │   ├── index.css
 │   ├── main.tsx
 │   └── vite-env.d.ts
@@ -68,6 +71,13 @@ GitHub Actions の workflow を配置する。
 
 - `WeightChart.tsx`: 測定項目の選択 UI と推移グラフを表示する。
 - `WeightData.tsx`: HealthPlanet API から体重・体脂肪率データを取得し、チャート用に整形する。
+
+### `src/lib/`
+
+API 通信に依存しない型、定義、純粋なデータ整形処理を配置する。
+
+- `measurementData.ts`: 測定データ型、測定種別定義、HealthPlanet レスポンスレコードのチャート用変換処理を定義する。
+- `measurementData.test.ts`: `measurementData.ts` の Vitest テスト。
 
 ### `public/`
 
@@ -103,6 +113,7 @@ npm 依存関係のインストール先。手編集しない。
 - `build`: `tsc && vite build` を実行する。
 - `export`: production build を実行する。
 - `lint`: ESLint を実行する。
+- `test`: Vitest の自動テストを実行する。
 - `preview`: Vite preview を起動する。
 - `preview:pages`: `scripts/serve-pages.mjs` で GitHub Pages 相当の localhost 確認サーバーを起動する。
 
@@ -151,6 +162,7 @@ ESLint 設定を定義する。
 - `vite`
 - `typescript`
 - `eslint`
+- `vitest`
 - `@vitejs/plugin-react-swc`
 - `@typescript-eslint/*`
 - `eslint-plugin-react-hooks`
