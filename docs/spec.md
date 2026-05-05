@@ -25,9 +25,11 @@
 - リクエスト先は `https://corsproxy.io/?url=...` を基本とし、`reqHeaders` で HealthPlanet origin fetch 側の request header を明示する。
 - `corsproxy.io` を使うことで、GitHub Pages 公開後も画面ロード時に最新データを取得する。
 - `corsproxy.io` の設定で GitHub Pages の公開ドメインを Allowed Domains に登録する必要がある。
-- データは常に HealthPlanet API からライブ取得する。
-- API 取得に失敗した場合でも、`measurement-data.json` などの静的ファイルへフォールバックしてはならない。
-- `npm run export` / GitHub Pages deploy のタイミングで取得したデータを同梱して表示する仕様にはしない。
+- 画面ロード時に `public/measurement-data.json` を静的な測定データとして読み込み、repo に保存済みの古いデータは API 取得対象から外す。
+- 静的データの最新日付より後の期間だけ HealthPlanet API からライブ取得する。
+- 静的データに `coverage.to` がある場合は、その日時の 1 秒後から HealthPlanet API で差分取得する。
+- 静的データが存在しない、または有効な測定データがない場合は、実行環境ごとの既定開始日時から HealthPlanet API で取得する。
+- 静的データと API 取得データは日付単位でマージし、同一日付は API 取得データで上書きする。
 - HTTP メソッドは POST。
 - production build でも HealthPlanet 向けパラメータは URL query ではなく `application/x-www-form-urlencoded` の POST body で送信する。
 - ブラウザから `corsproxy.io` へ送る request header は以下。
@@ -50,9 +52,11 @@
 - 画面ロード時に体重と体脂肪率を一括取得する。
 - 開発時のみ、`?fixture=success` を付けると正常系表示確認用の fixture データを使用する。
 - API の 1 回あたりの取得期間は最大 80 日として分割する。
-- 取得開始日時は実行環境により切り替える。
+- 静的データがない場合の取得開始日時は実行環境により切り替える。
   - `localhost`、`127.0.0.1`、`::1`: 実行時点の現在日時から 45 日前
   - GitHub Pages など localhost 以外: `20240327000000`
+- 静的データがあり `coverage.to` がない場合は、体重・体脂肪率それぞれの最新日付のうち古い方の翌日 00:00:00 から取得する。
+- 静的データが実行時点の現在日付まで揃っている場合は、HealthPlanet API を呼ばずに静的データだけを表示する。
 - 取得終了日時は実行時点の現在日時。
 - 各チャンクは前回の `to` の 1 秒後から次の `from` を開始する。
 
@@ -85,6 +89,21 @@ type MeasurementData = {
 - API から返された `data` は `reverse()` してからチャート用配列に詰める。
 - 測定データは `weight` と `bodyFat` のキーで保持する。
 - API に依存しない測定データの型、測定種別定義、レスポンスレコード変換処理は `src/lib/measurementData.ts` に置く。
+- `public/measurement-data.json` は以下の形式で保持する。
+
+```json
+{
+  "generatedAt": "2026-05-04T14:22:20.235Z",
+  "coverage": {
+    "from": "20240327000000",
+    "to": "20260506063000"
+  },
+  "data": {
+    "weight": [{ "date": "2026/04/02", "value": 81.6 }],
+    "bodyFat": [{ "date": "2026/04/02", "value": 24.3 }]
+  }
+}
+```
 
 ## 自動テスト仕様
 
@@ -117,7 +136,8 @@ type MeasurementData = {
 - axios エラーでレスポンスがあり、HTTP ステータスが 401 または本文に `Error 401` が含まれる場合は HealthPlanet 認証エラーとして扱う。
 - axios エラーでレスポンスがない場合は `Network Error: Could not connect to the server.` を投げる。
 - 取得に失敗した測定項目は空データとして扱い、画面には空状態を表示する。
-- 静的データや古いキャッシュデータで成功表示に見せるフォールバックは行わない。
+- 静的データの読み込みに失敗した場合は warning を出力し、実行環境ごとの既定開始日時から API 取得を試みる。
+- 静的データ読み込み後に API 取得へ失敗した場合は、取得済みの静的データを表示し、console にエラーを出力する。
 
 ## 現時点の制約と注意点
 
@@ -125,6 +145,7 @@ type MeasurementData = {
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
 - `WeightData.tsx` の import は HealthPlanet API 取得を起動するため、テストでは API 通信に依存しない `src/lib/measurementData.ts` を直接対象にする。
 - 実 API 取得は開発時・production build ともに `corsproxy.io` 経由で行う。
+- `scripts/export-healthplanet-data.mjs` は既存の `public/measurement-data.json` を読み込み、新規取得分を日付単位でマージして保存する。
 - GitHub Pages と同じ静的 HTML 条件を localhost で確認する場合は、`npm run export` 後に `npm run preview:pages` で `dist/` を `/myweight/` 配下として配信し、`http://localhost:4173/myweight/` のような URL で開く。
 - `file://` で `dist/index.html` を直接開く方法は、corsproxy.io の localhost/github.io 判定と異なるため、GitHub Pages 相当の正常系確認には使わない。
 - `src/main.tsx` の先頭に `<script src="http://localhost:8097"></script>` が含まれている。TypeScript/TSX としては通常の import 文ではないため、ビルドや型チェック時の注意点である。
