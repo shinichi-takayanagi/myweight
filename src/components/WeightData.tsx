@@ -65,19 +65,134 @@ const createEmptyMeasurementDataSet = (): MeasurementDataSet => ({
 const maskAccessToken = (accessToken: string): string =>
   accessToken.length > 8 ? `***${accessToken.slice(-8)}` : '***';
 
-const parseResponseData = (data: unknown): unknown => {
+type ParsedHealthPlanetResponse = {
+  data: unknown;
+  decodedFormat: string;
+  decodedTextPreview: string;
+  decodeAttempts: Array<{ format: string; ok: boolean; message?: string }>;
+  firstBytesHex?: string;
+  byteLength?: number;
+};
+
+const parseJsonText = (text: string): unknown => {
+  return JSON.parse(text);
+};
+
+const decodeUtf8 = (data: ArrayBuffer): string => {
+  return new TextDecoder('utf-8').decode(data);
+};
+
+const getFirstBytesHex = (data: ArrayBuffer): string => {
+  return Array.from(new Uint8Array(data).slice(0, 16))
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join(' ');
+};
+
+const decompressArrayBuffer = async (
+  data: ArrayBuffer,
+  format: string
+): Promise<ArrayBuffer> => {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('DecompressionStream is not available in this browser.');
+  }
+
+  const stream = new Blob([data]).stream().pipeThrough(
+    new DecompressionStream(format as CompressionFormat)
+  );
+  return new Response(stream).arrayBuffer();
+};
+
+const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetResponse> => {
   if (typeof data !== 'string') {
-    return data;
+    if (!(data instanceof ArrayBuffer)) {
+      return {
+        data,
+        decodedFormat: 'native',
+        decodedTextPreview: formatRawResponsePreview(data),
+        decodeAttempts: [],
+      };
+    }
+
+    const decodeAttempts: ParsedHealthPlanetResponse['decodeAttempts'] = [];
+    const byteLength = data.byteLength;
+    const firstBytesHex = getFirstBytesHex(data);
+
+    try {
+      const text = decodeUtf8(data);
+      const parsedData = parseJsonText(text);
+      decodeAttempts.push({ format: 'identity', ok: true });
+      return {
+        data: parsedData,
+        decodedFormat: 'identity',
+        decodedTextPreview: text.slice(0, 2000),
+        decodeAttempts,
+        firstBytesHex,
+        byteLength,
+      };
+    } catch (error) {
+      decodeAttempts.push({
+        format: 'identity',
+        ok: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    for (const format of ['gzip', 'deflate', 'deflate-raw', 'br']) {
+      try {
+        const decompressed = await decompressArrayBuffer(data, format);
+        const text = decodeUtf8(decompressed);
+        const parsedData = parseJsonText(text);
+        decodeAttempts.push({ format, ok: true });
+        return {
+          data: parsedData,
+          decodedFormat: format,
+          decodedTextPreview: text.slice(0, 2000),
+          decodeAttempts,
+          firstBytesHex,
+          byteLength,
+        };
+      } catch (error) {
+        decodeAttempts.push({
+          format,
+          ok: false,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    const fallbackText = decodeUtf8(data);
+    return {
+      data: fallbackText,
+      decodedFormat: 'unparsed-binary',
+      decodedTextPreview: fallbackText.slice(0, 2000),
+      decodeAttempts,
+      firstBytesHex,
+      byteLength,
+    };
   }
 
   try {
-    return JSON.parse(data);
+    return {
+      data: parseJsonText(data),
+      decodedFormat: 'string-json',
+      decodedTextPreview: data.slice(0, 2000),
+      decodeAttempts: [{ format: 'string-json', ok: true }],
+    };
   } catch {
-    return data;
+    return {
+      data,
+      decodedFormat: 'string-unparsed',
+      decodedTextPreview: data.slice(0, 2000),
+      decodeAttempts: [{ format: 'string-json', ok: false }],
+    };
   }
 };
 
 const formatRawResponsePreview = (data: unknown): string => {
+  if (data instanceof ArrayBuffer) {
+    return `[ArrayBuffer byteLength=${data.byteLength}, firstBytes=${getFirstBytesHex(data)}]`;
+  }
+
   if (typeof data === 'string') {
     return data.slice(0, 2000);
   }
@@ -161,6 +276,10 @@ const fetchInnerScanDataSet = async (
   params.append('from', from);
   params.append('to', to);
   const url = `https://corsproxy.io/?url=${healthPlanetUrl}`;
+  const requestHeaders = {
+    Accept: 'application/json',
+    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+  };
 
   try {
       console.error(
@@ -170,6 +289,8 @@ const fetchInnerScanDataSet = async (
           method: 'POST',
           healthPlanetUrl,
           proxyUrl: url,
+          headers: requestHeaders,
+          forbiddenBrowserHeaders: ['Accept-Encoding'],
           params: {
             access_token: maskAccessToken(accessToken),
             date: params.get('date'),
@@ -179,9 +300,14 @@ const fetchInnerScanDataSet = async (
           },
         })
       );
-      const response = await axios.post(url, params);
+      const response = await axios.post(url, params, {
+        headers: requestHeaders,
+        responseType: 'arraybuffer',
+        transformResponse: data => data,
+      });
       logHealthPlanetHeaders('[HealthPlanet headers]', response.status, response.headers);
-      const responseData = parseResponseData(response.data);
+      const parsedResponse = await parseResponseData(response.data);
+      const responseData = parsedResponse.data;
       if (
         responseData &&
         typeof responseData === 'object' &&
@@ -194,6 +320,11 @@ const fetchInnerScanDataSet = async (
         JSON.stringify({
           status: response.status,
           dataType: typeof response.data,
+          byteLength: parsedResponse.byteLength,
+          firstBytesHex: parsedResponse.firstBytesHex,
+          decodedFormat: parsedResponse.decodedFormat,
+          decodedTextPreview: parsedResponse.decodedTextPreview,
+          decodeAttempts: parsedResponse.decodeAttempts,
           hasDataArray: Array.isArray((responseData as { data?: unknown })?.data),
           dataLength: Array.isArray((responseData as { data?: unknown[] })?.data)
             ? (responseData as { data: unknown[] }).data.length
