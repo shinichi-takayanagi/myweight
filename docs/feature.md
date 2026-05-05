@@ -19,11 +19,14 @@
 - HealthPlanet Innerscan API から体重・体脂肪率データを取得する。
 - 体重データのタグとして `6021` を指定する。
 - 体脂肪率データのタグとして `6022` を指定する。
-- 画面ロード時に両データを一括取得する。
-- GitHub Pages 公開後も、画面ロード時に `corsproxy.io` 経由で最新データを取得する。
-- localhost では実行時点の現在日時から 45 日前から現在日時までのデータを取得する。
-- GitHub Pages では 2024 年 3 月 27 日 00:00:00 から現在日時までのデータを取得する。
+- 画面ロード時に `public/measurement-data.json` の静的データを先に読み込む。
+- repo に保存済みの古い測定データは API を呼ばずに静的データを参照する。
+- 静的データの最新日付より後の期間だけ、`corsproxy.io` 経由で HealthPlanet API から最新データを取得する。
+- `public/measurement-data.json` の `coverage.to` がある場合は、その日時の 1 秒後から API 取得する。
+- 静的データがない場合、localhost では実行時点の現在日時から 45 日前から現在日時までのデータを取得する。
+- 静的データがない場合、GitHub Pages では 2024 年 3 月 27 日 00:00:00 から現在日時までのデータを取得する。
 - API 仕様上の制約に合わせ、80 日ごとにリクエストを分割する。
+- 静的データと API 取得データは日付単位でマージする。
 - 各レスポンスの `date` と `keydata` をチャート用データに変換する。
 - `corsproxy.io` への request header と `reqHeaders` を明示し、HealthPlanet から JSON を取得する意図を固定する。
 - HealthPlanet origin fetch 側の `reqHeaders` でも `content-type:application/x-www-form-urlencoded;charset=UTF-8` を明示し、POST body の解釈を固定する。
@@ -40,11 +43,13 @@
 - API request、response header、raw response preview、decode 試行結果を console に出力する。
 - 401 エラーはアクセストークン不正として扱う。
 - レスポンスがない axios エラーはネットワークエラーとして扱う。
+- 静的データ読み込み後に API 取得へ失敗した場合は、静的データを表示する。
 
 ## 開発用コマンド
 
 - `npm run dev` で Vite の開発サーバーを起動する。
 - `npm run build` で TypeScript チェックと Vite build を実行する。
+- `npm run export:data` で HealthPlanet API から差分データを取得し、`public/measurement-data.json` に追記マージする。
 - `npm run export` で GitHub Pages 用の production build を実行する。
 - `npm run lint` で ESLint を実行する。
 - `npm run preview` で build 結果をプレビューする。

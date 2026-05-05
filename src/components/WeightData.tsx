@@ -57,6 +57,7 @@ const formatToApiDate = (date: moment.Moment): string => {
 const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
 const LOCAL_HEALTH_PLANET_LOOKBACK_DAYS = 45;
 const GITHUB_PAGES_HEALTH_PLANET_START_DATE = '20240327000000';
+const STATIC_MEASUREMENT_DATA_PATH = `${import.meta.env.BASE_URL}measurement-data.json`;
 const FORM_URLENCODED_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8';
 
 const browserRequestHeaders: Record<string, string> = {
@@ -76,6 +77,137 @@ const createEmptyMeasurementDataSet = (): MeasurementDataSet => ({
   weight: [],
   bodyFat: [],
 });
+
+type StaticMeasurementDataFile = {
+  generatedAt?: string;
+  coverage?: {
+    from?: string;
+    to?: string;
+  };
+  data?: Partial<Record<MeasurementKey, unknown>>;
+};
+
+type LoadedStaticMeasurementData = {
+  dataSet: MeasurementDataSet;
+  coveredTo: string | null;
+};
+
+const isMeasurementKey = (key: string): key is MeasurementKey =>
+  measurementMetrics.some(metric => metric.key === key);
+
+const normalizeMeasurementSeries = (series: unknown): MeasurementData[] => {
+  if (!Array.isArray(series)) {
+    return [];
+  }
+
+  return series
+    .filter((item): item is MeasurementData => {
+      if (!item || typeof item !== 'object') {
+        return false;
+      }
+
+      const record = item as { date?: unknown; value?: unknown };
+      return typeof record.date === 'string' && typeof record.value === 'number';
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
+
+const normalizeMeasurementDataSet = (
+  data: StaticMeasurementDataFile['data']
+): MeasurementDataSet => {
+  const normalized = createEmptyMeasurementDataSet();
+
+  if (!data || typeof data !== 'object') {
+    return normalized;
+  }
+
+  for (const [key, series] of Object.entries(data)) {
+    if (isMeasurementKey(key)) {
+      normalized[key] = normalizeMeasurementSeries(series);
+    }
+  }
+
+  return normalized;
+};
+
+const mergeMeasurementSeries = (
+  baseSeries: MeasurementData[],
+  nextSeries: MeasurementData[]
+): MeasurementData[] => {
+  const byDate = new Map<string, MeasurementData>();
+
+  for (const record of baseSeries) {
+    byDate.set(record.date, record);
+  }
+
+  for (const record of nextSeries) {
+    byDate.set(record.date, record);
+  }
+
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+};
+
+const mergeMeasurementDataSets = (
+  baseDataSet: MeasurementDataSet,
+  nextDataSet: MeasurementDataSet
+): MeasurementDataSet => ({
+  weight: mergeMeasurementSeries(baseDataSet.weight, nextDataSet.weight),
+  bodyFat: mergeMeasurementSeries(baseDataSet.bodyFat, nextDataSet.bodyFat),
+});
+
+const findOldestLatestMeasurementDate = (dataSet: MeasurementDataSet): moment.Moment | null => {
+  const latestDates = measurementMetrics
+    .map(metric => {
+      const series = dataSet[metric.key];
+      return series[series.length - 1]?.date;
+    })
+    .filter((date): date is string => Boolean(date))
+    .map(date => moment(date, 'YYYY/MM/DD', true))
+    .filter(date => date.isValid());
+
+  if (latestDates.length === 0) {
+    return null;
+  }
+
+  return moment.min(latestDates);
+};
+
+const isApiDateString = (value: unknown): value is string =>
+  typeof value === 'string' && /^\d{14}$/.test(value);
+
+const hasMeasurementData = (dataSet: MeasurementDataSet): boolean =>
+  measurementMetrics.some(metric => dataSet[metric.key].length > 0);
+
+const createEmptyLoadedStaticMeasurementData = (): LoadedStaticMeasurementData => ({
+  dataSet: createEmptyMeasurementDataSet(),
+  coveredTo: null,
+});
+
+const loadStaticMeasurementData = async (): Promise<LoadedStaticMeasurementData> => {
+  try {
+    const response = await fetch(STATIC_MEASUREMENT_DATA_PATH, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      console.warn(`Static measurement data was not loaded: ${response.status}`);
+      return createEmptyLoadedStaticMeasurementData();
+    }
+
+    const data = (await response.json()) as StaticMeasurementDataFile;
+    const dataSet = normalizeMeasurementDataSet(data.data);
+    const coveredTo = hasMeasurementData(dataSet) && isApiDateString(data.coverage?.to)
+      ? data.coverage.to
+      : null;
+    console.log(
+      `Loaded static measurement data: weight=${dataSet.weight.length}, bodyFat=${dataSet.bodyFat.length}`
+    );
+    return { dataSet, coveredTo };
+  } catch (error) {
+    console.warn('Static measurement data was not loaded:', error);
+    return createEmptyLoadedStaticMeasurementData();
+  }
+};
 
 const maskAccessToken = (accessToken: string): string =>
   accessToken.length > 8 ? `***${accessToken.slice(-8)}` : '***';
@@ -321,10 +453,42 @@ const isLocalhostRuntime = (): boolean => {
   return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 };
 
-const getHealthPlanetStartDateString = (): string => {
+const getHealthPlanetFallbackStartDateString = (): string => {
   return isLocalhostRuntime()
     ? formatToApiDate(moment().subtract(LOCAL_HEALTH_PLANET_LOOKBACK_DAYS, 'days'))
     : GITHUB_PAGES_HEALTH_PLANET_START_DATE;
+};
+
+const getHealthPlanetStartDateString = (
+  staticMeasurementData: LoadedStaticMeasurementData
+): string | null => {
+  if (staticMeasurementData.coveredTo) {
+    const nextDate = moment(staticMeasurementData.coveredTo, 'YYYYMMDDHHmmss', true)
+      .add(1, 'second');
+
+    if (nextDate.isAfter(moment())) {
+      return null;
+    }
+
+    return formatToApiDate(nextDate);
+  }
+
+  const { dataSet: staticDataSet } = staticMeasurementData;
+  const latestStaticDate = findOldestLatestMeasurementDate(staticDataSet);
+  const fallbackStartDateString = getHealthPlanetFallbackStartDateString();
+
+  if (!latestStaticDate) {
+    return fallbackStartDateString;
+  }
+
+  const nextDate = latestStaticDate.clone().add(1, 'day').startOf('day');
+  const now = moment();
+
+  if (nextDate.isAfter(now)) {
+    return null;
+  }
+
+  return formatToApiDate(nextDate);
 };
 
 const fetchInnerScanDataSet = async (
@@ -461,8 +625,17 @@ const fetchInnerScanDataSet = async (
   }
 };
 
-const fetchMeasurementDataSet = async (accessToken: string): Promise<MeasurementDataSet> => {
-  const startDateString = getHealthPlanetStartDateString();
+const fetchMeasurementDataSet = async (
+  accessToken: string,
+  staticMeasurementData: LoadedStaticMeasurementData
+): Promise<MeasurementDataSet> => {
+  const startDateString = getHealthPlanetStartDateString(staticMeasurementData);
+
+  if (!startDateString) {
+    console.log('Static measurement data is already up to date; skipping HealthPlanet fetch.');
+    return staticMeasurementData.dataSet;
+  }
+
   const startDate = moment(startDateString, 'YYYYMMDDHHmmss');
   const endDate = moment(); // Current date and time
   const allData = createEmptyMeasurementDataSet();
@@ -501,7 +674,7 @@ const fetchMeasurementDataSet = async (accessToken: string): Promise<Measurement
       ? error.message
       : 'HealthPlanet data fetch failed.';
   }
-  return allData;
+  return mergeMeasurementDataSets(staticMeasurementData.dataSet, allData);
 };
 
 const createFixtureSeries = (values: number[]): MeasurementData[] => {
@@ -525,6 +698,6 @@ const useFixtureData =
 const accessToken = '1777887687936/aCcnps5M5hFTpJhxSIWYMv8bhelUpvjw04JnJKGw';
 const measurementDataSet = useFixtureData
   ? createFixtureMeasurementDataSet()
-  : await fetchMeasurementDataSet(accessToken);
+  : await fetchMeasurementDataSet(accessToken, await loadStaticMeasurementData());
 
 export default measurementDataSet;

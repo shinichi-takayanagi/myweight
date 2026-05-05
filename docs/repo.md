@@ -67,20 +67,20 @@ GitHub Actions の workflow を配置する。
 画面部品とデータ取得モジュールを配置する。
 
 - `WeightChart.tsx`: 測定項目の選択 UI と推移グラフを表示する。
-- `WeightData.tsx`: HealthPlanet API から体重・体脂肪率データを取得し、チャート用に整形する。
+- `WeightData.tsx`: 静的測定データと HealthPlanet API の差分データを取得・マージし、チャート用に整形する。
 
 ### `public/`
 
 Vite の静的アセットを配置する。
 
-- `measurement-data.json`: 過去の補助 export スクリプトで生成される静的データ。現行アプリは HealthPlanet API からライブ取得し、このファイルへフォールバックしない。
+- `measurement-data.json`: repo に保持する静的測定データ。画面ロード時に読み込み、保存済みの古いデータは API を呼ばずに参照する。
 - `vite.svg`: Vite テンプレート由来の静的アセット。
 
 ### `scripts/`
 
 開発・検証用の補助スクリプトを配置する。
 
-- `export-healthplanet-data.mjs`: 実行時点の 45 日前から HealthPlanet API の測定データを取得し、`public/measurement-data.json` を生成する補助スクリプト。現行の `npm run export` からは呼び出されない。
+- `export-healthplanet-data.mjs`: 既存の `public/measurement-data.json` を読み込み、HealthPlanet API から差分データを取得して日付単位で追記マージする補助スクリプト。
 - `serve-pages.mjs`: `dist/` を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
 
 ### `dist/`
@@ -101,6 +101,7 @@ npm 依存関係のインストール先。手編集しない。
 
 - `dev`: Vite 開発サーバーを起動する。
 - `build`: `tsc && vite build` を実行する。
+- `export:data`: `scripts/export-healthplanet-data.mjs` を実行し、`public/measurement-data.json` を更新する。
 - `export`: production build を実行する。
 - `lint`: ESLint を実行する。
 - `preview`: Vite preview を起動する。
