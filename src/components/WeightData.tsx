@@ -1,11 +1,12 @@
 import axios from 'axios';
+import brotliPromise from 'brotli-dec-wasm';
 import moment from 'moment';
 
 export type MeasurementKey = 'weight' | 'bodyFat';
 
 export type MeasurementMetric = {
   key: MeasurementKey;
-  label: string;
+  label: string;            
   shortLabel: string;
   tag: string;
   unit: string;
