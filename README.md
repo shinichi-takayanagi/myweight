@@ -18,7 +18,7 @@ npm run preview:pages
 http://localhost:4173/myweight/
 ```
 
-localhost では HealthPlanet API の取得開始日時を `20260401090000` にして、API リクエスト数を抑える。GitHub Pages では `20240327000000` から取得する。
+localhost では HealthPlanet API の取得開始日時を実行時点の現在日時から 45 日前にして、API リクエスト数を抑える。GitHub Pages では `20240327000000` から取得する。
 
 `file://` で `dist/index.html` を直接開く確認は、corsproxy.io Free plan の localhost/github.io 判定と異なるため、GitHub Pages 相当の確認には使わない。
 

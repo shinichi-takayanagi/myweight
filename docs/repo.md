@@ -10,22 +10,26 @@
 
 ```text
 .
+├── .eslintrc.cjs
 ├── AGENTS.md
 ├── README.md
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+├── .gitignore
 ├── docs/
 │   ├── feature.md
 │   ├── repo.md
 │   ├── rule.md
 │   └── spec.md
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
 ├── index.html
 ├── package-lock.json
 ├── package.json
 ├── public/
+│   ├── measurement-data.json
 │   └── vite.svg
 ├── scripts/
+│   ├── export-healthplanet-data.mjs
 │   └── serve-pages.mjs
 ├── src/
 │   ├── App.css
@@ -69,10 +73,14 @@ GitHub Actions の workflow を配置する。
 
 Vite の静的アセットを配置する。
 
+- `measurement-data.json`: 過去の補助 export スクリプトで生成される静的データ。現行アプリは HealthPlanet API からライブ取得し、このファイルへフォールバックしない。
+- `vite.svg`: Vite テンプレート由来の静的アセット。
+
 ### `scripts/`
 
 開発・検証用の補助スクリプトを配置する。
 
+- `export-healthplanet-data.mjs`: 実行時点の 45 日前から HealthPlanet API の測定データを取得し、`public/measurement-data.json` を生成する補助スクリプト。現行の `npm run export` からは呼び出されない。
 - `serve-pages.mjs`: `dist/` を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
 
 ### `dist/`

@@ -21,11 +21,12 @@
 - 体脂肪率データのタグとして `6022` を指定する。
 - 画面ロード時に両データを一括取得する。
 - GitHub Pages 公開後も、画面ロード時に `corsproxy.io` 経由で最新データを取得する。
-- localhost では 2026 年 4 月 1 日 09:00:00 から現在日時までのデータを取得する。
+- localhost では実行時点の現在日時から 45 日前から現在日時までのデータを取得する。
 - GitHub Pages では 2024 年 3 月 27 日 00:00:00 から現在日時までのデータを取得する。
 - API 仕様上の制約に合わせ、80 日ごとにリクエストを分割する。
 - 各レスポンスの `date` と `keydata` をチャート用データに変換する。
 - `corsproxy.io` への request header と `reqHeaders` を明示し、HealthPlanet から JSON を取得する意図を固定する。
+- HealthPlanet origin fetch 側の `reqHeaders` でも `content-type:application/x-www-form-urlencoded;charset=UTF-8` を明示し、POST body の解釈を固定する。
 - `corsproxy.io` 経由で Brotli 圧縮 body が返った場合は `brotli-dec-wasm` で展開する。
 
 ## 日付整形

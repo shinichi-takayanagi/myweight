@@ -35,8 +35,10 @@
   - `Content-Type: application/x-www-form-urlencoded;charset=UTF-8`
 - `corsproxy.io` から HealthPlanet へ送る request header は `reqHeaders` query parameter で以下を指定する。
   - `accept:application/json`
+  - `content-type:application/x-www-form-urlencoded;charset=UTF-8`
   - `accept-encoding:identity`
 - ブラウザ JavaScript から `Accept-Encoding` header は直接指定できないため、origin fetch 側の圧縮制御は `corsproxy.io` の `reqHeaders` で指定する。
+- HealthPlanet origin fetch 側でも POST body を form-urlencoded として扱わせるため、`Content-Type` はブラウザ request header と `reqHeaders` の両方で明示する。
 - 送信パラメータは以下。
   - `access_token`
   - `date=1`
@@ -49,7 +51,7 @@
 - 開発時のみ、`?fixture=success` を付けると正常系表示確認用の fixture データを使用する。
 - API の 1 回あたりの取得期間は最大 80 日として分割する。
 - 取得開始日時は実行環境により切り替える。
-  - `localhost`、`127.0.0.1`、`::1`: `20260401090000`
+  - `localhost`、`127.0.0.1`、`::1`: 実行時点の現在日時から 45 日前
   - GitHub Pages など localhost 以外: `20240327000000`
 - 取得終了日時は実行時点の現在日時。
 - 各チャンクは前回の `to` の 1 秒後から次の `from` を開始する。
@@ -110,7 +112,7 @@ type MeasurementData = {
 
 ## 現時点の制約と注意点
 
-- アクセストークンは `src/components/WeightData.tsx` にハードコードされている。
+- アクセストークンは `src/components/WeightData.tsx` と補助スクリプト `scripts/export-healthplanet-data.mjs` にハードコードされている。
 - `WeightData.tsx` はモジュール読み込み時に top-level await でデータ取得を開始する。
 - 実 API 取得は開発時・production build ともに `corsproxy.io` 経由で行う。
 - GitHub Pages と同じ静的 HTML 条件を localhost で確認する場合は、`npm run export` 後に `npm run preview:pages` で `dist/` を `/myweight/` 配下として配信し、`http://localhost:4173/myweight/` のような URL で開く。
