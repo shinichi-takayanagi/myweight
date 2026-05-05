@@ -26,6 +26,7 @@
 - API 仕様上の制約に合わせ、80 日ごとにリクエストを分割する。
 - 各レスポンスの `date` と `keydata` をチャート用データに変換する。
 - `corsproxy.io` への request header と `reqHeaders` を明示し、HealthPlanet から JSON を取得する意図を固定する。
+- HealthPlanet origin fetch 側の `reqHeaders` でも `content-type:application/x-www-form-urlencoded;charset=UTF-8` を明示し、POST body の解釈を固定する。
 - `corsproxy.io` 経由で Brotli 圧縮 body が返った場合は `brotli-dec-wasm` で展開する。
 
 ## 日付整形

@@ -57,6 +57,18 @@ const formatToApiDate = (date: moment.Moment): string => {
 const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
 const LOCAL_HEALTH_PLANET_START_DATE = '20260401090000';
 const GITHUB_PAGES_HEALTH_PLANET_START_DATE = '20240327000000';
+const FORM_URLENCODED_CONTENT_TYPE = 'application/x-www-form-urlencoded;charset=UTF-8';
+
+const browserRequestHeaders: Record<string, string> = {
+  Accept: 'application/json',
+  'Content-Type': FORM_URLENCODED_CONTENT_TYPE,
+};
+
+const corsProxyRequestHeaderOverrides: Record<string, string> = {
+  accept: 'application/json',
+  'content-type': FORM_URLENCODED_CONTENT_TYPE,
+  'accept-encoding': 'identity',
+};
 
 const metricByTag = new Map(measurementMetrics.map(metric => [metric.tag, metric]));
 
@@ -295,8 +307,9 @@ const logHealthPlanetHeaders = (
 const buildCorsProxyUrl = (targetUrl: string): string => {
   const url = new URL('https://corsproxy.io/');
   url.searchParams.set('url', targetUrl);
-  url.searchParams.append('reqHeaders', 'accept:application/json');
-  url.searchParams.append('reqHeaders', 'accept-encoding:identity');
+  for (const [header, value] of Object.entries(corsProxyRequestHeaderOverrides)) {
+    url.searchParams.append('reqHeaders', `${header}:${value}`);
+  }
   return url.toString();
 };
 
@@ -327,10 +340,6 @@ const fetchInnerScanDataSet = async (
   params.append('from', from);
   params.append('to', to);
   const url = buildCorsProxyUrl(healthPlanetUrl);
-  const requestHeaders = {
-    Accept: 'application/json',
-    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-  };
 
   try {
       console.error(
@@ -340,11 +349,8 @@ const fetchInnerScanDataSet = async (
           method: 'POST',
           healthPlanetUrl,
           proxyUrl: url,
-          headers: requestHeaders,
-          corsProxyRequestHeaderOverrides: {
-            accept: 'application/json',
-            'accept-encoding': 'identity',
-          },
+          headers: browserRequestHeaders,
+          corsProxyRequestHeaderOverrides,
           forbiddenBrowserHeaders: ['Accept-Encoding'],
           params: {
             access_token: maskAccessToken(accessToken),
@@ -356,7 +362,7 @@ const fetchInnerScanDataSet = async (
         })
       );
       const response = await axios.post(url, params, {
-        headers: requestHeaders,
+        headers: browserRequestHeaders,
         responseType: 'arraybuffer',
         transformResponse: data => data,
       });
