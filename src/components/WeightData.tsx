@@ -79,7 +79,7 @@ const parseJsonText = (text: string): unknown => {
   return JSON.parse(text);
 };
 
-const decodeUtf8 = (data: ArrayBuffer): string => {
+const decodeUtf8 = (data: BufferSource): string => {
   return new TextDecoder('utf-8').decode(data);
 };
 
@@ -101,6 +101,11 @@ const decompressArrayBuffer = async (
     new DecompressionStream(format as CompressionFormat)
   );
   return new Response(stream).arrayBuffer();
+};
+
+const decompressBrotliArrayBuffer = async (data: ArrayBuffer): Promise<Uint8Array> => {
+  const brotli = await brotliPromise;
+  return brotli.decompress(new Uint8Array(data));
 };
 
 const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetResponse> => {
@@ -138,7 +143,7 @@ const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetRespo
       });
     }
 
-    for (const format of ['gzip', 'deflate', 'deflate-raw', 'br']) {
+    for (const format of ['gzip', 'deflate', 'deflate-raw']) {
       try {
         const decompressed = await decompressArrayBuffer(data, format);
         const text = decodeUtf8(decompressed);
@@ -159,6 +164,27 @@ const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetRespo
           message: error instanceof Error ? error.message : String(error),
         });
       }
+    }
+
+    try {
+      const decompressed = await decompressBrotliArrayBuffer(data);
+      const text = decodeUtf8(decompressed);
+      const parsedData = parseJsonText(text);
+      decodeAttempts.push({ format: 'br-wasm', ok: true });
+      return {
+        data: parsedData,
+        decodedFormat: 'br-wasm',
+        decodedTextPreview: text.slice(0, 2000),
+        decodeAttempts,
+        firstBytesHex,
+        byteLength,
+      };
+    } catch (error) {
+      decodeAttempts.push({
+        format: 'br-wasm',
+        ok: false,
+        message: error instanceof Error ? error.message : String(error),
+      });
     }
 
     const fallbackText = decodeUtf8(data);
