@@ -77,6 +77,29 @@ const parseResponseData = (data: unknown): unknown => {
   }
 };
 
+const formatRawResponsePreview = (data: unknown): string => {
+  if (typeof data === 'string') {
+    return data.slice(0, 2000);
+  }
+
+  try {
+    return JSON.stringify(data).slice(0, 2000);
+  } catch {
+    return String(data).slice(0, 2000);
+  }
+};
+
+const getHeaderValue = (
+  headers: { get?: (name: string) => unknown; [key: string]: unknown },
+  name: string
+): unknown => {
+  if (typeof headers.get === 'function') {
+    return headers.get(name);
+  }
+
+  return headers[name];
+};
+
 const fetchInnerScanDataSet = async (
   accessToken: string,
   from: string,
@@ -109,6 +132,14 @@ const fetchInnerScanDataSet = async (
         })
       );
       const response = await axios.post(url, params);
+      const contentType = getHeaderValue(response.headers, 'content-type');
+      const contentEncoding = getHeaderValue(response.headers, 'content-encoding');
+
+      console.error('[HealthPlanet headers]', {
+        status: response.status,
+        contentType,
+        contentEncoding,
+      });
       const responseData = parseResponseData(response.data);
       if (
         responseData &&
@@ -126,6 +157,7 @@ const fetchInnerScanDataSet = async (
           dataLength: Array.isArray((responseData as { data?: unknown[] })?.data)
             ? (responseData as { data: unknown[] }).data.length
             : null,
+          rawResponsePreview: formatRawResponsePreview(response.data),
           responseKeys: responseData && typeof responseData === 'object'
             ? Object.keys(responseData)
             : [],
@@ -135,6 +167,10 @@ const fetchInnerScanDataSet = async (
         ? (responseData as { data: Array<{ date: string; keydata: string; tag: string }> }).data
         : [];
       if (records.length === 0) {
+          console.error(
+            '[HealthPlanet raw response]',
+            formatRawResponsePreview(response.data)
+          );
           console.warn('No measurement records returned:', responseData);
           return createEmptyMeasurementDataSet();
       }
@@ -157,6 +193,10 @@ const fetchInnerScanDataSet = async (
       if (axios.isAxiosError(error)) {
           if (error.response) {
               console.error(`Status: ${error.response.status}, Data:`, error.response.data);
+              console.error(
+                '[HealthPlanet raw response]',
+                formatRawResponsePreview(error.response.data)
+              );
               if (error.response.status === 401 || `${error.response.data}`.includes('Error 401')) {
                   throw new Error("HealthPlanet authentication failed. Check the embedded access token.");
               }
