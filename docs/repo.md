@@ -15,6 +15,7 @@
 ├── README.md
 ├── .github/
 │   └── workflows/
+│       ├── ci.yml
 │       └── deploy.yml
 ├── .gitignore
 ├── docs/
@@ -59,7 +60,8 @@
 
 GitHub Actions の workflow を配置する。
 
-- `deploy.yml`: push、手動実行、定期実行で `npm run export` を実行し、GitHub Pages にデプロイする。
+- `ci.yml`: pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
+- `deploy.yml`: `master` branch への push、手動実行で `npm run export` を実行し、GitHub Pages にデプロイする。
 
 ### `src/`
 

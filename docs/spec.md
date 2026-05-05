@@ -92,6 +92,7 @@ type MeasurementData = {
 - `npm test` は `vitest run` を実行する。
 - テストは外部 API 通信に依存しない純粋関数を対象にする。
 - 現時点では `src/lib/measurementData.test.ts` で測定種別定義、空データセット作成、日付整形、HealthPlanet レスポンスレコードのチャート用変換を検証する。
+- GitHub Actions の CI は pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## 画面仕様
 

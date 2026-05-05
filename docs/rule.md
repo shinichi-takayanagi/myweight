@@ -57,6 +57,7 @@ npm test
 - テストランナーは Vitest を使用する。
 - 外部 API 通信に依存しない純粋関数を優先してテストする。
 - HealthPlanet API レスポンスの整形ロジックは `src/lib/measurementData.ts` に置き、`src/lib/measurementData.test.ts` で検証する。
+- GitHub Actions の CI では pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## Build
 
