@@ -58,6 +58,13 @@ npm test
 - 外部 API 通信に依存しない純粋関数を優先してテストする。
 - HealthPlanet API レスポンスの整形ロジックは `src/lib/measurementData.ts` に置き、`src/lib/measurementData.test.ts` で検証する。
 - GitHub Actions の CI では pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
+- 作業依頼を受けた場合は、完了報告前に単体テストを通し、その結果を報告する。
+- 作業依頼を受けた場合は PR を作成し、CI が通るまで確認してから完了報告する。
+
+## Agent Workflow
+
+- 作業開始時は `AGENTS.md` を必ず読む。
+- 必要に応じて `docs/` 以下の関連ドキュメントを参照する。
 
 ## Build
 
