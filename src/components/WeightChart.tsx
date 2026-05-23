@@ -17,7 +17,7 @@ import { MeasurementData, MeasurementKey, measurementMetrics } from '../lib/meas
 type MedicationPeriod = {
   startDate: string;
   endDate?: string;
-  label: string;
+  dose: string;
   fill: string;
   labelColor: string;
 };
@@ -27,35 +27,74 @@ type VisibleMedicationPeriod = MedicationPeriod & {
   x2: string;
 };
 
+type ReferenceAreaLabelProps = {
+  dose: string;
+  color: string;
+  viewBox?: {
+    x?: number;
+    y?: number;
+    width?: number;
+  };
+};
+
 const rybelsusPeriods: MedicationPeriod[] = [
   {
     startDate: '2024/03/24',
     endDate: '2024/04/15',
-    label: 'リベルサス 3mg',
+    dose: '3mg',
     fill: '#fef3c7',
     labelColor: '#92400e',
   },
   {
     startDate: '2024/04/16',
     endDate: '2024/09/19',
-    label: 'リベルサス 7mg',
+    dose: '7mg',
     fill: '#dbeafe',
     labelColor: '#1d4ed8',
   },
   {
     startDate: '2024/09/20',
     endDate: '2025/05/10',
-    label: 'リベルサス 14mg',
+    dose: '14mg',
     fill: '#fee2e2',
     labelColor: '#b91c1c',
   },
   {
     startDate: '2026/05/16',
-    label: 'リベルサス 14mg',
+    dose: '14mg',
     fill: '#fee2e2',
     labelColor: '#b91c1c',
   },
 ];
+
+const MedicationPeriodLabel = ({ dose, color, viewBox }: ReferenceAreaLabelProps) => {
+  if (
+    !viewBox
+    || typeof viewBox.x !== 'number'
+    || typeof viewBox.y !== 'number'
+    || typeof viewBox.width !== 'number'
+  ) {
+    return null;
+  }
+
+  const x = viewBox.x + viewBox.width / 2;
+  const y = viewBox.y + 16;
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={color}
+      fontSize={12}
+      fontWeight={700}
+      pointerEvents="none"
+      textAnchor="middle"
+    >
+      <tspan x={x}>リベルサス</tspan>
+      <tspan x={x} dy="1.2em">{dose}</tspan>
+    </text>
+  );
+};
 
 const getVisibleMedicationPeriods = (data: MeasurementData[]): VisibleMedicationPeriod[] => (
   rybelsusPeriods.flatMap(period => {
@@ -140,19 +179,13 @@ const WeightChart = () => {
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" vertical={false} />
             {visibleMedicationPeriods.map(period => (
               <ReferenceArea
-                key={`${period.label}-${period.x1}-${period.x2}`}
+                key={`rybelsus-${period.dose}-${period.x1}-${period.x2}`}
                 x1={period.x1}
                 x2={period.x2}
                 fill={period.fill}
                 fillOpacity={0.52}
                 strokeOpacity={0}
-                label={{
-                  value: period.label,
-                  position: 'insideTop',
-                  fill: period.labelColor,
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
+                label={<MedicationPeriodLabel dose={period.dose} color={period.labelColor} />}
               />
             ))}
             <XAxis
