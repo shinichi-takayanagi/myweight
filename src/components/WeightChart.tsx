@@ -4,6 +4,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceArea,
   Tooltip,
   XAxis,
   YAxis,
@@ -11,7 +12,68 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import measurementDataSet, { measurementFetchError } from './WeightData';
-import { MeasurementKey, measurementMetrics } from '../lib/measurementData';
+import { MeasurementData, MeasurementKey, measurementMetrics } from '../lib/measurementData';
+
+type MedicationPeriod = {
+  startDate: string;
+  endDate?: string;
+  label: string;
+  fill: string;
+  labelColor: string;
+};
+
+type VisibleMedicationPeriod = MedicationPeriod & {
+  x1: string;
+  x2: string;
+};
+
+const rybelsusPeriods: MedicationPeriod[] = [
+  {
+    startDate: '2024/03/24',
+    endDate: '2024/04/15',
+    label: 'リベルサス 3mg',
+    fill: '#fef3c7',
+    labelColor: '#92400e',
+  },
+  {
+    startDate: '2024/04/16',
+    endDate: '2024/09/19',
+    label: 'リベルサス 7mg',
+    fill: '#dbeafe',
+    labelColor: '#1d4ed8',
+  },
+  {
+    startDate: '2024/09/20',
+    endDate: '2025/05/10',
+    label: 'リベルサス 14mg',
+    fill: '#fee2e2',
+    labelColor: '#b91c1c',
+  },
+  {
+    startDate: '2026/05/16',
+    label: 'リベルサス 14mg',
+    fill: '#fee2e2',
+    labelColor: '#b91c1c',
+  },
+];
+
+const getVisibleMedicationPeriods = (data: MeasurementData[]): VisibleMedicationPeriod[] => (
+  rybelsusPeriods.flatMap(period => {
+    const periodDates = data
+      .filter(point => point.date >= period.startDate && (!period.endDate || point.date <= period.endDate))
+      .map(point => point.date);
+
+    if (periodDates.length === 0) {
+      return [];
+    }
+
+    return [{
+      ...period,
+      x1: periodDates[0],
+      x2: periodDates[periodDates.length - 1],
+    }];
+  })
+);
 
 const WeightChart = () => {
   const [selectedMetricKey, setSelectedMetricKey] = useState<MeasurementKey>('weight');
@@ -19,7 +81,14 @@ const WeightChart = () => {
     () => measurementMetrics.find(metric => metric.key === selectedMetricKey) ?? measurementMetrics[0],
     [selectedMetricKey]
   );
-  const selectedData = measurementDataSet[selectedMetric.key] ?? [];
+  const selectedData = useMemo(
+    () => measurementDataSet[selectedMetric.key] ?? [],
+    [selectedMetric.key]
+  );
+  const visibleMedicationPeriods = useMemo(
+    () => getVisibleMedicationPeriods(selectedData),
+    [selectedData]
+  );
   const latestData = selectedData[selectedData.length - 1];
 
   return (
@@ -69,6 +138,23 @@ const WeightChart = () => {
             margin={{ top: 16, right: 18, left: 8, bottom: 72 }}
           >
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" vertical={false} />
+            {visibleMedicationPeriods.map(period => (
+              <ReferenceArea
+                key={`${period.label}-${period.x1}-${period.x2}`}
+                x1={period.x1}
+                x2={period.x2}
+                fill={period.fill}
+                fillOpacity={0.52}
+                strokeOpacity={0}
+                label={{
+                  value: period.label,
+                  position: 'insideTop',
+                  fill: period.labelColor,
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              />
+            ))}
             <XAxis
               dataKey="date"
               angle={-45}
