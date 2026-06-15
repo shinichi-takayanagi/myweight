@@ -4,19 +4,21 @@ import moment from 'moment';
 import {
   createEmptyMeasurementDataSet,
   createMeasurementDataSetFromRecords,
+  findOldestLatestMeasurementDate,
+  formatToApiDate,
+  hasMeasurementData,
+  isApiDateString,
+  MAX_DAYS_PER_REQUEST,
   MeasurementData,
-  MeasurementKey,
   MeasurementDataSet,
+  MeasurementKey,
   measurementMetrics,
+  mergeMeasurementDataSets,
+  normalizeMeasurementDataSet,
 } from '../lib/measurementData';
 
 export let measurementFetchError: string | null = null;
 
-const formatToApiDate = (date: moment.Moment): string => {
-  return date.format('YYYYMMDDHHmmss');
-};
-
-const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
 const LOCAL_HEALTH_PLANET_LOOKBACK_DAYS = 45;
 const GITHUB_PAGES_HEALTH_PLANET_START_DATE = '20240327000000';
 const STATIC_MEASUREMENT_DATA_PATH = `${import.meta.env.BASE_URL}measurement-data.json`;
@@ -46,92 +48,6 @@ type LoadedStaticMeasurementData = {
   dataSet: MeasurementDataSet;
   coveredTo: string | null;
 };
-
-const isMeasurementKey = (key: string): key is MeasurementKey =>
-  measurementMetrics.some(metric => metric.key === key);
-
-const normalizeMeasurementSeries = (series: unknown): MeasurementData[] => {
-  if (!Array.isArray(series)) {
-    return [];
-  }
-
-  return series
-    .filter((item): item is MeasurementData => {
-      if (!item || typeof item !== 'object') {
-        return false;
-      }
-
-      const record = item as { date?: unknown; value?: unknown };
-      return typeof record.date === 'string' && typeof record.value === 'number';
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const normalizeMeasurementDataSet = (
-  data: StaticMeasurementDataFile['data']
-): MeasurementDataSet => {
-  const normalized = createEmptyMeasurementDataSet();
-
-  if (!data || typeof data !== 'object') {
-    return normalized;
-  }
-
-  for (const [key, series] of Object.entries(data)) {
-    if (isMeasurementKey(key)) {
-      normalized[key] = normalizeMeasurementSeries(series);
-    }
-  }
-
-  return normalized;
-};
-
-const mergeMeasurementSeries = (
-  baseSeries: MeasurementData[],
-  nextSeries: MeasurementData[]
-): MeasurementData[] => {
-  const byDate = new Map<string, MeasurementData>();
-
-  for (const record of baseSeries) {
-    byDate.set(record.date, record);
-  }
-
-  for (const record of nextSeries) {
-    byDate.set(record.date, record);
-  }
-
-  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const mergeMeasurementDataSets = (
-  baseDataSet: MeasurementDataSet,
-  nextDataSet: MeasurementDataSet
-): MeasurementDataSet => ({
-  weight: mergeMeasurementSeries(baseDataSet.weight, nextDataSet.weight),
-  bodyFat: mergeMeasurementSeries(baseDataSet.bodyFat, nextDataSet.bodyFat),
-});
-
-const findOldestLatestMeasurementDate = (dataSet: MeasurementDataSet): moment.Moment | null => {
-  const latestDates = measurementMetrics
-    .map(metric => {
-      const series = dataSet[metric.key];
-      return series[series.length - 1]?.date;
-    })
-    .filter((date): date is string => Boolean(date))
-    .map(date => moment(date, 'YYYY/MM/DD', true))
-    .filter(date => date.isValid());
-
-  if (latestDates.length === 0) {
-    return null;
-  }
-
-  return moment.min(latestDates);
-};
-
-const isApiDateString = (value: unknown): value is string =>
-  typeof value === 'string' && /^\d{14}$/.test(value);
-
-const hasMeasurementData = (dataSet: MeasurementDataSet): boolean =>
-  measurementMetrics.some(metric => dataSet[metric.key].length > 0);
 
 const createEmptyLoadedStaticMeasurementData = (): LoadedStaticMeasurementData => ({
   dataSet: createEmptyMeasurementDataSet(),

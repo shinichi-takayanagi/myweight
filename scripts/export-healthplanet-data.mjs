@@ -1,24 +1,20 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import {
+  createEmptyMeasurementDataSet,
+  createMeasurementDataSetFromRecords,
+  findOldestLatestMeasurementDate,
+  hasMeasurementData,
+  isApiDateString,
+  MAX_DAYS_PER_REQUEST,
+  measurementMetrics,
+  mergeMeasurementDataSets,
+  normalizeMeasurementDataSet,
+} from './lib/measurementDataUtils.mjs';
 
 const ACCESS_TOKEN = '1777887687936/aCcnps5M5hFTpJhxSIWYMv8bhelUpvjw04JnJKGw';
-const MAX_DAYS_PER_REQUEST = 80;
 const HEALTH_PLANET_LOOKBACK_DAYS = 45;
 const OUTPUT_PATH = 'public/measurement-data.json';
 const DEFAULT_COVERAGE_FROM = '20240327000000';
-
-const measurementMetrics = [
-  { key: 'weight', tag: '6021' },
-  { key: 'bodyFat', tag: '6022' },
-];
-
-const metricByTag = new Map(measurementMetrics.map(metric => [metric.tag, metric]));
-
-const parseApiDate = dateString => {
-  const year = dateString.slice(0, 4);
-  const month = dateString.slice(4, 6);
-  const day = dateString.slice(6, 8);
-  return `${year}/${month}/${day}`;
-};
 
 const formatToApiDate = date => {
   const pad = value => `${value}`.padStart(2, '0');
@@ -46,11 +42,6 @@ const addSeconds = (date, seconds) => {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const createEmptyMeasurementDataSet = () => ({
-  weight: [],
-  bodyFat: [],
-});
-
 const createEmptyLoadedMeasurementData = () => ({
   dataSet: createEmptyMeasurementDataSet(),
   coverage: {
@@ -59,81 +50,14 @@ const createEmptyLoadedMeasurementData = () => ({
   },
 });
 
-const isApiDateString = value => typeof value === 'string' && /^\d{14}$/.test(value);
-
-const hasMeasurementData = dataSet => measurementMetrics.some(metric => dataSet[metric.key].length > 0);
-
-const isValidMeasurementRecord = record => (
-  record &&
-  typeof record === 'object' &&
-  typeof record.date === 'string' &&
-  typeof record.value === 'number'
+const parseApiDateTime = value => new Date(
+  Number(value.slice(0, 4)),
+  Number(value.slice(4, 6)) - 1,
+  Number(value.slice(6, 8)),
+  Number(value.slice(8, 10)),
+  Number(value.slice(10, 12)),
+  Number(value.slice(12, 14))
 );
-
-const normalizeMeasurementSeries = series => {
-  if (!Array.isArray(series)) {
-    return [];
-  }
-
-  return series
-    .filter(isValidMeasurementRecord)
-    .sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const normalizeMeasurementDataSet = data => {
-  const normalized = createEmptyMeasurementDataSet();
-
-  if (!data || typeof data !== 'object') {
-    return normalized;
-  }
-
-  for (const metric of measurementMetrics) {
-    normalized[metric.key] = normalizeMeasurementSeries(data[metric.key]);
-  }
-
-  return normalized;
-};
-
-const mergeMeasurementSeries = (baseSeries, nextSeries) => {
-  const byDate = new Map();
-
-  for (const record of baseSeries) {
-    byDate.set(record.date, record);
-  }
-
-  for (const record of nextSeries) {
-    byDate.set(record.date, record);
-  }
-
-  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const mergeMeasurementDataSets = (baseDataSet, nextDataSet) => ({
-  weight: mergeMeasurementSeries(baseDataSet.weight, nextDataSet.weight),
-  bodyFat: mergeMeasurementSeries(baseDataSet.bodyFat, nextDataSet.bodyFat),
-});
-
-const parseChartDate = dateString => {
-  const [year, month, day] = dateString.split('/').map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const findOldestLatestMeasurementDate = dataSet => {
-  const latestDates = measurementMetrics
-    .map(metric => {
-      const series = dataSet[metric.key];
-      return series[series.length - 1]?.date;
-    })
-    .filter(Boolean)
-    .map(parseChartDate)
-    .filter(date => !Number.isNaN(date.getTime()));
-
-  if (latestDates.length === 0) {
-    return null;
-  }
-
-  return new Date(Math.min(...latestDates.map(date => date.getTime())));
-};
 
 const loadExistingMeasurementDataSet = async () => {
   try {
@@ -172,15 +96,6 @@ const getFetchStartDate = existingData => {
   return nextDate;
 };
 
-const parseApiDateTime = value => new Date(
-  Number(value.slice(0, 4)),
-  Number(value.slice(4, 6)) - 1,
-  Number(value.slice(6, 8)),
-  Number(value.slice(8, 10)),
-  Number(value.slice(10, 12)),
-  Number(value.slice(12, 14))
-);
-
 const fetchInnerScanDataSet = async (from, to) => {
   const params = new URLSearchParams();
   params.append('access_token', ACCESS_TOKEN);
@@ -213,21 +128,7 @@ const fetchInnerScanDataSet = async (from, to) => {
 
   const data = await response.json();
   const records = Array.isArray(data.data) ? data.data : [];
-  const result = createEmptyMeasurementDataSet();
-
-  for (const record of [...records].reverse()) {
-    const metric = metricByTag.get(record.tag);
-    if (!metric) {
-      continue;
-    }
-
-    result[metric.key].push({
-      date: parseApiDate(record.date),
-      value: Number(record.keydata),
-    });
-  }
-
-  return result;
+  return createMeasurementDataSetFromRecords(records);
 };
 
 const fetchMeasurementDataSet = async existingData => {

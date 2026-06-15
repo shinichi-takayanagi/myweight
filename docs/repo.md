@@ -30,6 +30,8 @@
 │   ├── measurement-data.json
 │   └── vite.svg
 ├── scripts/
+│   ├── lib/
+│   │   └── measurementDataUtils.mjs
 │   ├── export-healthplanet-data.mjs
 │   └── serve-pages.mjs
 ├── src/
@@ -78,7 +80,7 @@ GitHub Actions の workflow を配置する。
 
 API 通信に依存しない型、定義、純粋なデータ整形処理を配置する。
 
-- `measurementData.ts`: 測定データ型、測定種別定義、HealthPlanet レスポンスレコードのチャート用変換処理を定義する。
+- `measurementData.ts`: 測定データ型、測定種別定義、HealthPlanet レスポンスレコードのチャート用変換処理、およびデータ正規化・マージ・バリデーション等の共通ユーティリティを定義する。
 - `measurementData.test.ts`: `measurementData.ts` の Vitest テスト。
 
 ### `public/`
@@ -92,7 +94,8 @@ Vite の静的アセットを配置する。
 
 開発・検証用の補助スクリプトを配置する。
 
-- `export-healthplanet-data.mjs`: 既存の `public/measurement-data.json` を読み込み、HealthPlanet API から差分データを取得して日付単位で追記マージする補助スクリプト。
+- `lib/measurementDataUtils.mjs`: 測定データの定数・型定義・正規化・マージ等の共通ユーティリティ。`src/lib/measurementData.ts` と同等のロジックを Node.js スクリプト向けに提供する。
+- `export-healthplanet-data.mjs`: 既存の `public/measurement-data.json` を読み込み、HealthPlanet API から差分データを取得して日付単位で追記マージする補助スクリプト。`lib/measurementDataUtils.mjs` の共通ユーティリティを使用する。
 - `serve-pages.mjs`: `dist/` を GitHub Pages と同じ `/myweight/` 配下として localhost で配信する。
 
 ### `dist/`
