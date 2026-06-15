@@ -60,10 +60,10 @@
 ## 自動テスト
 
 - Vitest で自動テストを実行する。
-- HealthPlanet のレスポンスレコードをチャート用データへ変換する純粋関数をテストする。
-- 測定種別タグ、空データセット、日付整形、未知タグの無視、API レスポンス順からチャート表示順への反転を確認する。
+- `src/lib/measurementData.test.ts`: 測定種別タグ、空データセット、日付整形、HealthPlanet レスポンスレコードのチャート用変換を検証する。
+- `src/lib/weightDataUtils.test.ts`: API 日付書式変換、トークンマスク、測定データ正規化・マージ、CORS プロキシ URL 構築、ヘッダー処理、レスポンスプレビュー整形を検証する。
+- `src/lib/medicationPeriods.test.ts`: リベルサス服用期間定義と、測定データからの表示対象期間算出を検証する。
 - GitHub Actions の CI で pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
 
 ## 未実装・現時点で存在しない機能
 - 古いデータをREPOにためておき、APIを呼ばずにそれを参照する機能はない。
-- 自動テストは現時点で用意されていない。
