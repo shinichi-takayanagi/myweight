@@ -156,7 +156,6 @@ ESLint 設定を定義する。
 - `brotli-dec-wasm`
 - `moment`
 - `recharts`
-- `cors`
 
 `brotli-dec-wasm` は、`corsproxy.io` 経由で `Content-Encoding` が欠落した Brotli 圧縮 body が返った場合に、ブラウザ上で HealthPlanet レスポンスを展開するために使用する。
 
