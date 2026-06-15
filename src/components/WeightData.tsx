@@ -306,7 +306,11 @@ const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetRespo
       decodedTextPreview: data.slice(0, 2000),
       decodeAttempts: [{ format: 'string-json', ok: true }],
     };
-  } catch {
+  } catch (error) {
+    console.warn(
+      'HealthPlanet response string could not be parsed as JSON:',
+      error instanceof Error ? error.message : error
+    );
     return {
       data,
       decodedFormat: 'string-unparsed',
@@ -515,15 +519,23 @@ const fetchInnerScanDataSet = async (
             : [],
         })
       );
-      const records = Array.isArray((responseData as { data?: unknown })?.data)
-        ? (responseData as { data: Array<{ date: string; keydata: string; tag: string }> }).data
-        : [];
-      if (records.length === 0) {
+      if (
+        parsedResponse.decodedFormat === 'unparsed-binary' ||
+        parsedResponse.decodedFormat === 'string-unparsed'
+      ) {
           console.error(
             '[HealthPlanet raw response]',
             formatRawResponsePreview(response.data)
           );
-          console.warn('No measurement records returned:', responseData);
+          throw new Error(
+            `HealthPlanet response could not be decoded (format: ${parsedResponse.decodedFormat}).`
+          );
+      }
+      const records = Array.isArray((responseData as { data?: unknown })?.data)
+        ? (responseData as { data: Array<{ date: string; keydata: string; tag: string }> }).data
+        : [];
+      if (records.length === 0) {
+          console.warn('No measurement records returned for this period:', { from, to });
           return createEmptyMeasurementDataSet();
       }
 
@@ -558,13 +570,17 @@ const fetchInnerScanDataSet = async (
               if (error.response.status === 401 || `${error.response.data}`.includes('Error 401')) {
                   throw new Error("HealthPlanet authentication failed. Check the embedded access token.");
               }
+              throw new Error(
+                `HealthPlanet request failed with status ${error.response.status}.`
+              );
           } else {
-              console.error("Request failed:", error.message)
               throw new Error("Network Error: Could not connect to the server.");
           }
 
       }
-      return createEmptyMeasurementDataSet();
+      throw error instanceof Error
+        ? error
+        : new Error('Unexpected error during HealthPlanet fetch.');
   }
 };
 

@@ -282,7 +282,8 @@ try {
 } catch (error) {
   try {
     await access(OUTPUT_PATH);
-    console.warn(`HealthPlanet export failed; using existing ${OUTPUT_PATH}. ${error}`);
+    console.error(`HealthPlanet export failed; using existing ${OUTPUT_PATH}. ${error}`);
+    process.exitCode = 1;
   } catch {
     throw error;
   }
