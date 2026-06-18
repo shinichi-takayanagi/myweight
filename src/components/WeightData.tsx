@@ -5,16 +5,27 @@ import {
   createEmptyMeasurementDataSet,
   createMeasurementDataSetFromRecords,
   MeasurementData,
-  MeasurementKey,
   MeasurementDataSet,
   measurementMetrics,
 } from '../lib/measurementData';
+import {
+  buildCorsProxyUrl,
+  findOldestLatestMeasurementDate,
+  formatRawResponsePreview,
+  formatToApiDate,
+  getFirstBytesHex,
+  getHeaderValue,
+  hasMeasurementData,
+  isApiDateString,
+  isLocalhostRuntime,
+  maskAccessToken,
+  mergeMeasurementDataSets,
+  normalizeHeaders,
+  normalizeMeasurementDataSet,
+  StaticMeasurementDataFile,
+} from '../lib/weightDataUtils';
 
 export let measurementFetchError: string | null = null;
-
-const formatToApiDate = (date: moment.Moment): string => {
-  return date.format('YYYYMMDDHHmmss');
-};
 
 const MAX_DAYS_PER_REQUEST = 80; // Maximum days per API request
 const LOCAL_HEALTH_PLANET_LOOKBACK_DAYS = 45;
@@ -33,105 +44,10 @@ const corsProxyRequestHeaderOverrides: Record<string, string> = {
   'accept-encoding': 'identity',
 };
 
-type StaticMeasurementDataFile = {
-  generatedAt?: string;
-  coverage?: {
-    from?: string;
-    to?: string;
-  };
-  data?: Partial<Record<MeasurementKey, unknown>>;
-};
-
 type LoadedStaticMeasurementData = {
   dataSet: MeasurementDataSet;
   coveredTo: string | null;
 };
-
-const isMeasurementKey = (key: string): key is MeasurementKey =>
-  measurementMetrics.some(metric => metric.key === key);
-
-const normalizeMeasurementSeries = (series: unknown): MeasurementData[] => {
-  if (!Array.isArray(series)) {
-    return [];
-  }
-
-  return series
-    .filter((item): item is MeasurementData => {
-      if (!item || typeof item !== 'object') {
-        return false;
-      }
-
-      const record = item as { date?: unknown; value?: unknown };
-      return typeof record.date === 'string' && typeof record.value === 'number';
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const normalizeMeasurementDataSet = (
-  data: StaticMeasurementDataFile['data']
-): MeasurementDataSet => {
-  const normalized = createEmptyMeasurementDataSet();
-
-  if (!data || typeof data !== 'object') {
-    return normalized;
-  }
-
-  for (const [key, series] of Object.entries(data)) {
-    if (isMeasurementKey(key)) {
-      normalized[key] = normalizeMeasurementSeries(series);
-    }
-  }
-
-  return normalized;
-};
-
-const mergeMeasurementSeries = (
-  baseSeries: MeasurementData[],
-  nextSeries: MeasurementData[]
-): MeasurementData[] => {
-  const byDate = new Map<string, MeasurementData>();
-
-  for (const record of baseSeries) {
-    byDate.set(record.date, record);
-  }
-
-  for (const record of nextSeries) {
-    byDate.set(record.date, record);
-  }
-
-  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
-};
-
-const mergeMeasurementDataSets = (
-  baseDataSet: MeasurementDataSet,
-  nextDataSet: MeasurementDataSet
-): MeasurementDataSet => ({
-  weight: mergeMeasurementSeries(baseDataSet.weight, nextDataSet.weight),
-  bodyFat: mergeMeasurementSeries(baseDataSet.bodyFat, nextDataSet.bodyFat),
-});
-
-const findOldestLatestMeasurementDate = (dataSet: MeasurementDataSet): moment.Moment | null => {
-  const latestDates = measurementMetrics
-    .map(metric => {
-      const series = dataSet[metric.key];
-      return series[series.length - 1]?.date;
-    })
-    .filter((date): date is string => Boolean(date))
-    .map(date => moment(date, 'YYYY/MM/DD', true))
-    .filter(date => date.isValid());
-
-  if (latestDates.length === 0) {
-    return null;
-  }
-
-  return moment.min(latestDates);
-};
-
-const isApiDateString = (value: unknown): value is string =>
-  typeof value === 'string' && /^\d{14}$/.test(value);
-
-const hasMeasurementData = (dataSet: MeasurementDataSet): boolean =>
-  measurementMetrics.some(metric => dataSet[metric.key].length > 0);
 
 const createEmptyLoadedStaticMeasurementData = (): LoadedStaticMeasurementData => ({
   dataSet: createEmptyMeasurementDataSet(),
@@ -164,9 +80,6 @@ const loadStaticMeasurementData = async (): Promise<LoadedStaticMeasurementData>
   }
 };
 
-const maskAccessToken = (accessToken: string): string =>
-  accessToken.length > 8 ? `***${accessToken.slice(-8)}` : '***';
-
 type ParsedHealthPlanetResponse = {
   data: unknown;
   decodedFormat: string;
@@ -182,12 +95,6 @@ const parseJsonText = (text: string): unknown => {
 
 const decodeUtf8 = (data: BufferSource): string => {
   return new TextDecoder('utf-8').decode(data);
-};
-
-const getFirstBytesHex = (data: ArrayBuffer): string => {
-  return Array.from(new Uint8Array(data).slice(0, 16))
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join(' ');
 };
 
 const decompressArrayBuffer = async (
@@ -320,65 +227,6 @@ const parseResponseData = async (data: unknown): Promise<ParsedHealthPlanetRespo
   }
 };
 
-const formatRawResponsePreview = (data: unknown): string => {
-  if (data instanceof ArrayBuffer) {
-    return `[ArrayBuffer byteLength=${data.byteLength}, firstBytes=${getFirstBytesHex(data)}]`;
-  }
-
-  if (typeof data === 'string') {
-    return data.slice(0, 2000);
-  }
-
-  try {
-    return JSON.stringify(data).slice(0, 2000);
-  } catch {
-    return String(data).slice(0, 2000);
-  }
-};
-
-const getHeaderValue = (
-  headers: { get?: (name: string) => unknown; [key: string]: unknown },
-  name: string
-): unknown => {
-  if (typeof headers.get === 'function') {
-    return headers.get(name);
-  }
-
-  return headers[name];
-};
-
-const normalizeHeaders = (
-  headers: { get?: (name: string) => unknown; [key: string]: unknown } | undefined
-): Record<string, unknown> => {
-  if (!headers) {
-    return {};
-  }
-
-  const normalized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    if (typeof value !== 'function') {
-      normalized[key] = value;
-    }
-  }
-
-  for (const headerName of [
-    'content-type',
-    'content-encoding',
-    'cf-ray',
-    'server',
-    'access-control-allow-origin',
-    'access-control-allow-methods',
-    'access-control-allow-headers',
-  ]) {
-    const value = getHeaderValue(headers, headerName);
-    if (value !== undefined && value !== null) {
-      normalized[headerName] = value;
-    }
-  }
-
-  return normalized;
-};
-
 const logHealthPlanetHeaders = (
   label: string,
   status: number | undefined,
@@ -393,23 +241,6 @@ const logHealthPlanetHeaders = (
     contentEncoding,
     headers: normalizeHeaders(headers),
   });
-};
-
-const buildCorsProxyUrl = (targetUrl: string): string => {
-  const url = new URL('https://corsproxy.io/');
-  url.searchParams.set('url', targetUrl);
-  for (const [header, value] of Object.entries(corsProxyRequestHeaderOverrides)) {
-    url.searchParams.append('reqHeaders', `${header}:${value}`);
-  }
-  return url.toString();
-};
-
-const isLocalhostRuntime = (): boolean => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 };
 
 const getHealthPlanetFallbackStartDateString = (): string => {
@@ -462,7 +293,7 @@ const fetchInnerScanDataSet = async (
   params.append('tag', measurementMetrics.map(metric => metric.tag).join(','));
   params.append('from', from);
   params.append('to', to);
-  const url = buildCorsProxyUrl(healthPlanetUrl);
+  const url = buildCorsProxyUrl(healthPlanetUrl, corsProxyRequestHeaderOverrides);
 
   try {
       console.error(
