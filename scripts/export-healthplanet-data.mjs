@@ -1,6 +1,6 @@
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 
-const ACCESS_TOKEN = '1777887687936/aCcnps5M5hFTpJhxSIWYMv8bhelUpvjw04JnJKGw';
+const ACCESS_TOKEN = process.env.HEALTHPLANET_ACCESS_TOKEN ?? '';
 const MAX_DAYS_PER_REQUEST = 80;
 const HEALTH_PLANET_LOOKBACK_DAYS = 45;
 const OUTPUT_PATH = 'public/measurement-data.json';

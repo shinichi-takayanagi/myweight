@@ -39,6 +39,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run export
+        env:
+          VITE_HEALTHPLANET_ACCESS_TOKEN: ${{ secrets.HEALTHPLANET_ACCESS_TOKEN }}
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

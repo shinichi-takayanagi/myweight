@@ -120,8 +120,12 @@ npm run build
 
 ## セキュリティと設定値
 
-- 新規実装ではアクセストークンなどの秘密情報をコードへ直接追加しない。
-- 現時点では `src/components/WeightData.tsx` と `scripts/export-healthplanet-data.mjs` に既存アクセストークンがハードコードされているため、変更時は環境変数やバックエンド経由の取得への移行を検討する。
+- 秘密情報をコードへ直接追加しない。
+- HealthPlanet アクセストークンは環境変数で管理する。
+  - ブラウザ側: `VITE_HEALTHPLANET_ACCESS_TOKEN` (Vite の `import.meta.env` 経由)
+  - `scripts/export-healthplanet-data.mjs`: `HEALTHPLANET_ACCESS_TOKEN` (`process.env` 経由)
+  - GitHub Pages デプロイ: GitHub Actions secret `HEALTHPLANET_ACCESS_TOKEN` を `deploy.yml` で参照する。
+- ローカル開発時は `.env` ファイルにトークンを設定する (`.env` は `.gitignore` に含まれる)。
 - CORS プロキシへの依存は外部サービスの可用性に影響されるため、仕様変更時は代替手段を検討する。
 
 ## ドキュメント更新

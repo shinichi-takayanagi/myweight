@@ -485,7 +485,7 @@ const useFixtureData =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).get('fixture') === 'success';
 
-const accessToken = '1777887687936/aCcnps5M5hFTpJhxSIWYMv8bhelUpvjw04JnJKGw';
+const accessToken = import.meta.env.VITE_HEALTHPLANET_ACCESS_TOKEN ?? '';
 const measurementDataSet = useFixtureData
   ? createFixtureMeasurementDataSet()
   : await fetchMeasurementDataSet(accessToken, await loadStaticMeasurementData());

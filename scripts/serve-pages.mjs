@@ -75,8 +75,9 @@ createServer(async (request, response) => {
     });
     response.end(body);
   } catch (error) {
+    console.error('serve-pages error:', error);
     response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end(error instanceof Error ? error.message : 'Internal server error');
+    response.end('Internal server error');
   }
 }).listen(port, 'localhost', () => {
   console.log(`Serving dist at http://localhost:${port}${basePath}/`);
