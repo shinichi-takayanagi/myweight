@@ -1,9 +1,15 @@
 import { MeasurementData } from './measurementData';
 
+export type MedicationLine = {
+  name: string;
+  dose: string;
+};
+
 export type MedicationPeriod = {
   startDate: string;
   endDate?: string;
   dose: string;
+  medications?: MedicationLine[];
   fill: string;
   labelColor: string;
 };
@@ -38,6 +44,10 @@ export const rybelsusPeriods: MedicationPeriod[] = [
   {
     startDate: '2026/05/16',
     dose: '14mg',
+    medications: [
+      { name: 'リベルサス', dose: '14mg' },
+      { name: 'ダパグリフロジン', dose: '5mg' },
+    ],
     fill: '#fee2e2',
     labelColor: '#b91c1c',
   },

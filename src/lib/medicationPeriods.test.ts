@@ -18,6 +18,13 @@ describe('rybelsusPeriods', () => {
   test('last period has no endDate', () => {
     expect(rybelsusPeriods[3].endDate).toBeUndefined();
   });
+
+  test('last period includes medications array with dapagliflozin', () => {
+    expect(rybelsusPeriods[3].medications).toEqual([
+      { name: 'リベルサス', dose: '14mg' },
+      { name: 'ダパグリフロジン', dose: '5mg' },
+    ]);
+  });
 });
 
 describe('getVisibleMedicationPeriods', () => {

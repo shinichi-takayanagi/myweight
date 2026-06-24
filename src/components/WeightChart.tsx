@@ -13,10 +13,11 @@ import {
 } from 'recharts';
 import measurementDataSet, { measurementFetchError } from './WeightData';
 import { MeasurementKey, measurementMetrics } from '../lib/measurementData';
-import { getVisibleMedicationPeriods } from '../lib/medicationPeriods';
+import { getVisibleMedicationPeriods, MedicationLine } from '../lib/medicationPeriods';
 
 type ReferenceAreaLabelProps = {
   dose: string;
+  medications?: MedicationLine[];
   color: string;
   viewBox?: {
     x?: number;
@@ -25,7 +26,7 @@ type ReferenceAreaLabelProps = {
   };
 };
 
-const MedicationPeriodLabel = ({ dose, color, viewBox }: ReferenceAreaLabelProps) => {
+const MedicationPeriodLabel = ({ dose, medications, color, viewBox }: ReferenceAreaLabelProps) => {
   if (
     !viewBox
     || typeof viewBox.x !== 'number'
@@ -37,6 +38,26 @@ const MedicationPeriodLabel = ({ dose, color, viewBox }: ReferenceAreaLabelProps
 
   const x = viewBox.x + viewBox.width / 2;
   const y = viewBox.y + 16;
+
+  if (medications && medications.length > 0) {
+    return (
+      <text
+        x={x}
+        y={y}
+        fill={color}
+        fontSize={11}
+        fontWeight={700}
+        pointerEvents="none"
+        textAnchor="middle"
+      >
+        {medications.map((med, i) => (
+          <tspan key={i} x={x} dy={i === 0 ? 0 : '1.2em'}>
+            {med.name}（{med.dose}）
+          </tspan>
+        ))}
+      </text>
+    );
+  }
 
   return (
     <text
@@ -114,7 +135,7 @@ const WeightChart = () => {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={selectedData}
-            margin={{ top: 16, right: 18, left: 8, bottom: 72 }}
+            margin={{ top: 16, right: 18, left: 8, bottom: 82 }}
           >
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" vertical={false} />
             {visibleMedicationPeriods.map(period => (
@@ -125,12 +146,12 @@ const WeightChart = () => {
                 fill={period.fill}
                 fillOpacity={0.52}
                 strokeOpacity={0}
-                label={<MedicationPeriodLabel dose={period.dose} color={period.labelColor} />}
+                label={<MedicationPeriodLabel dose={period.dose} medications={period.medications} color={period.labelColor} />}
               />
             ))}
             <XAxis
               dataKey="date"
-              angle={-45}
+              angle={-90}
               textAnchor="end"
               tick={{ fill: '#64748b', fontSize: 12 }}
               tickLine={false}
