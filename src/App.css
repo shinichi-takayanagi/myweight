@@ -5,11 +5,11 @@
 .App {
   width: min(1456px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 48px 0;
+  padding: 24px 0 16px;
 }
 
 .app-header {
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .app-header h1 {
@@ -117,7 +117,7 @@
 
 .chart-area {
   position: relative;
-  height: calc(100vh - 280px);
+  height: calc(100vh - 270px);
   min-height: 420px;
   padding: 16px 20px 10px 8px;
 }
