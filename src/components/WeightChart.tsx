@@ -191,7 +191,6 @@ const WeightChart = () => {
               stroke={selectedMetric.color}
               travellerWidth={10}
               height={28}
-              y={532}
             />
           </LineChart>
         </ResponsiveContainer>
