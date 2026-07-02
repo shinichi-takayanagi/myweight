@@ -65,5 +65,12 @@
 - `src/lib/medicationPeriods.test.ts`: リベルサス服用期間定義と、測定データからの表示対象期間算出を検証する。
 - GitHub Actions の CI で pull request と `master` branch への push 時に `npm test`、`npm run lint`、`npm run build` を実行する。
 
+## 週次データ自動更新
+
+- GitHub Actions のスケジュール実行（毎週月曜 UTC 03:00）で HealthPlanet API からデータを取得し、`public/measurement-data.json` を更新する。
+- `workflow_dispatch` による手動実行にも対応する。
+- 差分がある場合のみ commit して `master` に push する。差分がない場合は空 commit を作らない。
+- `master` への push により既存の `deploy.yml` が発火し、GitHub Pages が自動で再デプロイされる。
+
 ## 未実装・現時点で存在しない機能
 - 古いデータをREPOにためておき、APIを呼ばずにそれを参照する機能はない。
