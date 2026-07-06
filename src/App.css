@@ -154,28 +154,26 @@
 
   .panel-header {
     display: grid;
-    padding: 22px 18px 16px;
+    gap: 10px;
+    padding: 14px 14px 10px;
   }
 
   .metric-select {
     min-width: 0;
   }
 
-  .summary-row {
-    grid-template-columns: 1fr;
-  }
-
   .summary-row > div {
-    padding: 14px 18px;
+    padding: 8px 10px;
   }
 
-  .summary-row > div + div {
-    border-top: 1px solid #e2e8f0;
-    border-left: 0;
+  .summary-row strong {
+    font-size: 0.95rem;
   }
 
   .chart-area {
-    height: 420px;
+    height: calc(100vh - 300px);
+    height: calc(100dvh - 300px);
+    min-height: 220px;
     padding-right: 6px;
     padding-left: 0;
   }
