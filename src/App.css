@@ -78,6 +78,36 @@
   outline: 3px solid rgba(37, 99, 235, 0.16);
 }
 
+.axis-range {
+  display: grid;
+  gap: 8px;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.axis-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.axis-range-inputs input {
+  width: 84px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #0f172a;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 600;
+}
+
+.axis-range-inputs input:focus {
+  border-color: #2563eb;
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+}
+
 .summary-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -159,6 +189,11 @@
   }
 
   .metric-select {
+    min-width: 0;
+  }
+
+  .axis-range-inputs input {
+    width: 100%;
     min-width: 0;
   }
 

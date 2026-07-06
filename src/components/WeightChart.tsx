@@ -75,8 +75,18 @@ const MedicationPeriodLabel = ({ dose, medications, color, viewBox }: ReferenceA
   );
 };
 
+const parseAxisBound = (input: string): number | null => {
+  if (input.trim() === '') {
+    return null;
+  }
+  const value = Number(input);
+  return Number.isFinite(value) ? value : null;
+};
+
 const WeightChart = () => {
   const [selectedMetricKey, setSelectedMetricKey] = useState<MeasurementKey>('weight');
+  const [yMinInput, setYMinInput] = useState('');
+  const [yMaxInput, setYMaxInput] = useState('');
   const selectedMetric = useMemo(
     () => measurementMetrics.find(metric => metric.key === selectedMetricKey) ?? measurementMetrics[0],
     [selectedMetricKey]
@@ -90,6 +100,20 @@ const WeightChart = () => {
     [selectedData]
   );
   const latestData = selectedData[selectedData.length - 1];
+  const yDomain = useMemo<[number | 'auto', number | 'auto']>(() => {
+    const min = parseAxisBound(yMinInput);
+    const max = parseAxisBound(yMaxInput);
+    if (min !== null && max !== null && min >= max) {
+      return selectedMetric.domain;
+    }
+    return [min ?? selectedMetric.domain[0], max ?? selectedMetric.domain[1]];
+  }, [yMinInput, yMaxInput, selectedMetric.domain]);
+
+  const handleMetricChange = (key: MeasurementKey) => {
+    setSelectedMetricKey(key);
+    setYMinInput('');
+    setYMaxInput('');
+  };
 
   return (
     <section className="chart-panel" aria-label="HealthPlanet measurement chart">
@@ -102,7 +126,7 @@ const WeightChart = () => {
           <span>表示データ</span>
           <select
             value={selectedMetricKey}
-            onChange={event => setSelectedMetricKey(event.target.value as MeasurementKey)}
+            onChange={event => handleMetricChange(event.target.value as MeasurementKey)}
           >
             {measurementMetrics.map(metric => (
               <option key={metric.key} value={metric.key}>
@@ -111,6 +135,28 @@ const WeightChart = () => {
             ))}
           </select>
         </label>
+        <div className="axis-range">
+          <span>縦軸レンジ（{selectedMetric.unit}）</span>
+          <div className="axis-range-inputs">
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="auto"
+              aria-label="縦軸の最小値"
+              value={yMinInput}
+              onChange={event => setYMinInput(event.target.value)}
+            />
+            <span aria-hidden="true">〜</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="auto"
+              aria-label="縦軸の最大値"
+              value={yMaxInput}
+              onChange={event => setYMaxInput(event.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="summary-row">
@@ -160,7 +206,8 @@ const WeightChart = () => {
             />
             <YAxis
               dataKey="value"
-              domain={selectedMetric.domain}
+              domain={yDomain}
+              allowDataOverflow
               tick={{ fill: '#64748b', fontSize: 12 }}
               tickLine={false}
               axisLine={false}
