@@ -135,7 +135,7 @@ const WeightChart = () => {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={selectedData}
-            margin={{ top: 16, right: 18, left: 8, bottom: 82 }}
+            margin={{ top: 16, right: 18, left: 8, bottom: 120 }}
           >
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 6" vertical={false} />
             {visibleMedicationPeriods.map(period => (
