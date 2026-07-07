@@ -42,6 +42,7 @@ Example: `http://localhost:5173/?fixture=success`
   - Legend at top
   - Brush slider at bottom
 - **Metric switching**: Dropdown toggles between 体重 (weight) and 体脂肪率 (body fat)
+- **Y-axis range inputs** (`.axis-range`, top-right of panel header): min 〜 max number inputs (placeholder "auto"). Empty falls back to the metric's default domain; min >= max also falls back. Inputs reset when switching metric. Note: with default weight domain `[70, 'auto']`, Recharts tick rounding may show a bottom tick of 69kg rather than exactly 70 — this is expected, not a bug.
 
 ## Verifying CSS Changes
 
