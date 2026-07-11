@@ -116,7 +116,7 @@ type MeasurementData = {
 ## データ自動更新仕様
 
 - GitHub Actions の `update-data.yml` で `public/measurement-data.json` を週次で自動更新する。
-- トリガーは `schedule`（cron `0 3 * * 1`、毎週月曜 UTC 03:00）と `workflow_dispatch`（手動実行）の両方。
+- トリガーは `schedule`（cron `0 2 * * 0`、毎週日曜 11:00 JST = 日曜 02:00 UTC）と `workflow_dispatch`（手動実行）の両方。
 - ワークフローには `contents: write` 権限を付与し、commit/push を許可する。
 - ジョブは `actions/checkout@v4`、`actions/setup-node@v4`（node-version 20、`cache: 'npm'`）、`npm ci`、`npm run export:data` の順で実行する。
 - `npm run export:data` には環境変数 `HEALTHPLANET_ACCESS_TOKEN`（既存 secret を参照）を渡す。ローカル・CI ともに同スクリプトは HealthPlanet Innerscan API へ直接 POST する。

@@ -67,7 +67,7 @@
 
 ## 週次データ自動更新
 
-- GitHub Actions のスケジュール実行（毎週月曜 UTC 03:00）で HealthPlanet API からデータを取得し、`public/measurement-data.json` を更新する。
+- GitHub Actions のスケジュール実行（毎週日曜 11:00 JST = 日曜 02:00 UTC）で HealthPlanet API からデータを取得し、`public/measurement-data.json` を更新する。
 - `workflow_dispatch` による手動実行にも対応する。
 - 差分がある場合のみ commit して `master` に push する。差分がない場合は空 commit を作らない。
 - `master` への push により既存の `deploy.yml` が発火し、GitHub Pages が自動で再デプロイされる。
