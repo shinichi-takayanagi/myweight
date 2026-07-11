@@ -2,8 +2,8 @@ name: Update measurement data
 
 on:
   schedule:
-    # 毎週月曜 UTC 03:00 に実行
-    - cron: '0 3 * * 1'
+    # 毎週日曜 11:00 JST（= 日曜 02:00 UTC）に実行
+    - cron: '0 2 * * 0'
   workflow_dispatch:
 
 permissions:

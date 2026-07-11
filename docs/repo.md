@@ -67,7 +67,7 @@ GitHub Actions の workflow を配置する。
 
 - `ci.yml`: pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
 - `deploy.yml`: `master` branch への push、手動実行で `npm run export` を実行し、GitHub Pages にデプロイする。
-- `update-data.yml`: 週次スケジュール（毎週月曜 UTC 03:00）と手動実行で `npm run export:data` を実行し、差分がある場合のみ `public/measurement-data.json` を commit して `master` に push する。
+- `update-data.yml`: 週次スケジュール（毎週日曜 11:00 JST = 日曜 02:00 UTC）と手動実行で `npm run export:data` を実行し、差分がある場合のみ `public/measurement-data.json` を commit して `master` に push する。
 
 ### `src/`
 
