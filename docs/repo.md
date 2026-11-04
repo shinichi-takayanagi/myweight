@@ -65,9 +65,9 @@
 
 GitHub Actions の workflow を配置する。
 
-- `ci.yml`: pull request と `master` branch への push で `npm test`、`npm run lint`、`npm run build` を実行する。
-- `deploy.yml`: `master` branch への push、手動実行で `npm run export` を実行し、GitHub Pages にデプロイする。
-- `update-data.yml`: 週次スケジュール（毎週日曜 11:00 JST = 日曜 02:00 UTC）と手動実行で `npm run export:data` を実行し、差分がある場合のみ `public/measurement-data.json` を commit して `master` に push する。
+- `ci.yml`: pull request と `master` branch への push、`workflow_call` で `npm test`、`npm run lint`、`npm run build` を実行する。再利用時は `ref` で検証するコミットを指定する。
+- `deploy.yml`: `master` branch への push、手動実行、`workflow_call` で `npm run export` を実行し、GitHub Pages にデプロイする。再利用時は `ref` と `HEALTHPLANET_ACCESS_TOKEN` secret を受け取る。
+- `update-data.yml`: 週次スケジュール（毎週日曜 11:00 JST = 日曜 02:00 UTC）と手動実行で、`master` 上から `npm run export:data` を実行する。差分がある場合のみ測定データを commit/push し、その SHA を CI、成功後に Pages デプロイへ渡す。データ更新の同時実行を防ぐ。
 
 ### `src/`
 

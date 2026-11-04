@@ -8,6 +8,15 @@ on:
 
   # Actions タブから手動でワークフローを実行できるようにします
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Validated commit to deploy
+        required: true
+        type: string
+    secrets:
+      HEALTHPLANET_ACCESS_TOKEN:
+        required: true
 
 # GITHUB_TOKEN のパーミッションを設定し、GitHub Pages へのデプロイを許可します
 permissions:
@@ -30,6 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
