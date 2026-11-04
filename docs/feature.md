@@ -70,7 +70,9 @@
 - GitHub Actions のスケジュール実行（毎週日曜 11:00 JST = 日曜 02:00 UTC）で HealthPlanet API からデータを取得し、`public/measurement-data.json` を更新する。
 - `workflow_dispatch` による手動実行にも対応する。
 - 差分がある場合のみ commit して `master` に push する。差分がない場合は空 commit を作らない。
-- `master` への push により既存の `deploy.yml` が発火し、GitHub Pages が自動で再デプロイされる。
+- `master` 上でのみ更新を実行し、同時に複数の更新を走らせない。
+- `GITHUB_TOKEN` による push では別の workflow が起動しないため、更新 workflow から再利用可能な `ci.yml` と `deploy.yml` を順に呼び出す。
+- push したコミット SHA を両方に渡し、単体テスト・lint・build が成功したコミットを GitHub Pages にデプロイする。差分がない場合や更新・CI に失敗した場合はデプロイしない。
 
 ## 未実装・現時点で存在しない機能
 - 古いデータをREPOにためておき、APIを呼ばずにそれを参照する機能はない。

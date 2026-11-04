@@ -117,12 +117,15 @@ type MeasurementData = {
 
 - GitHub Actions の `update-data.yml` で `public/measurement-data.json` を週次で自動更新する。
 - トリガーは `schedule`（cron `0 2 * * 0`、毎週日曜 11:00 JST = 日曜 02:00 UTC）と `workflow_dispatch`（手動実行）の両方。
-- ワークフローには `contents: write` 権限を付与し、commit/push を許可する。
+- データ更新ジョブに `contents: write` 権限を付与し、commit/push を許可する。デプロイジョブにのみ `pages: write` と `id-token: write` を付与する。
+- 更新は `master` 上でのみ実行し、concurrency group により同時実行を防ぐ。
 - ジョブは `actions/checkout@v4`、`actions/setup-node@v4`（node-version 20、`cache: 'npm'`）、`npm ci`、`npm run export:data` の順で実行する。
 - `npm run export:data` には環境変数 `HEALTHPLANET_ACCESS_TOKEN`（既存 secret を参照）を渡す。ローカル・CI ともに同スクリプトは HealthPlanet Innerscan API へ直接 POST する。
 - `git diff --quiet public/measurement-data.json` で差分を判定し、差分がない場合は commit をスキップして空 commit を防ぐ。
 - 差分がある場合のみ `github-actions[bot]` として commit し、`master` に push する。
-- `master` への push により既存の `deploy.yml` が発火し、GitHub Pages が自動で再デプロイされる。
+- `GITHUB_TOKEN` による push では別の workflow が起動しないため、`update-data.yml` 内で再利用可能な `ci.yml`、`deploy.yml` を順に呼び出す。
+- 更新ジョブは push に成功した場合にのみ変更有無と作成したコミット SHA を出力し、CI・デプロイの checkout 対象に同じ SHA を渡す。
+- 差分がない場合は CI・デプロイをスキップし、更新・CI に失敗した場合もデプロイしない。
 
 ## 画面仕様
 
